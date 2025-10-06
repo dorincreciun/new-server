@@ -1,0 +1,16 @@
+Server backend
+
+- Sarcini
+
+1. Crearea unui server backend cu urmatoarele tehnologii:
+Express
+Typescript
+Prisma + MySQL
+Swagger
+
+2. Posibilitatea de a genera pentru frontend schema API cu open-api
+3 Posibilitatea de testare a rutelor API din interfata Swagger
+4. Posibilitatea de a accesa online schema yaml a API-ului
+5. Configurari usoare din .env file ulterior fiecare setare sa fie comentata pentru a fi mai intuitiv ce face
+6. Testare automata a API-ului si a functionalitatii serverului.
+7. Cel mai important nu folosi tot ce iti trece prin cap fara permisiunea mea ( ma refer la biblioteci )

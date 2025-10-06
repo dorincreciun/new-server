@@ -1,0 +1,17 @@
+/* Stil pentru plasarea linkului pe linia titlului (linia roșie din screenshot) */
+.swagger-ui .info .title.title-with-yaml-link {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+#openapi-yaml-inline {
+  font-weight: 600;
+  text-decoration: none;
+  color: #0b5ed7;
+}
+
+#openapi-yaml-inline:hover {
+  text-decoration: underline;
+}
+
