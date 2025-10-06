@@ -1,3 +1,9 @@
-Sistem de autorizare
+Sistem de autorizare cu JWT
 
--
+- Sarcini
+
+1. Creiaza un sistem moder de autorizare prin token JWT
+2. Userul trebuie sa poata sa creieze un cont, sa se deconecteze de pe cont, sa poata intra in contul existent.
+3. Creiaza API logic pentru acest sistem.
+4. Adauga posibilitatea de a testa API-ul din interfata swagger.
+5. Testeaza API-ul.

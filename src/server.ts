@@ -4,6 +4,7 @@ import swaggerUi from 'swagger-ui-express';
 import swaggerJSDoc from 'swagger-jsdoc';
 import fs from 'node:fs';
 import { config } from './config';
+import { authRoutes } from './routes/authRoutes';
 
 export function createApp() {
   const app = express();
@@ -16,19 +17,32 @@ export function createApp() {
     res.json({ status: 'ok' });
   });
 
-  // Swagger specification via swagger-jsdoc (basic empty spec scaffold)
+  // API routes
+  app.use('/api/auth', authRoutes);
+
+  // Swagger specification via swagger-jsdoc
   const swaggerSpec = swaggerJSDoc({
     definition: {
       openapi: '3.0.3',
       info: {
         title: config.swaggerTitle,
         version: config.swaggerVersion,
+        description: 'API pentru sistemul de autorizare cu JWT',
       },
       servers: config.swaggerServerUrl
         ? [{ url: config.swaggerServerUrl }]
         : [{ url: `http://localhost:${config.port}` }],
+      components: {
+        securitySchemes: {
+          bearerAuth: {
+            type: 'http',
+            scheme: 'bearer',
+            bearerFormat: 'JWT',
+          },
+        },
+      },
     },
-    apis: [],
+    apis: ['./src/controllers/*.ts', './src/routes/*.ts'],
   });
 
   app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
