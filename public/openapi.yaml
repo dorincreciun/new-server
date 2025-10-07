@@ -143,6 +143,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+    get:
+      summary: Refresh access token
+      tags:
+        - Auth
+      responses:
+        '200':
+          description: Token refreshed successfully
+          headers:
+            Set-Cookie:
+              description: New access and refresh tokens set as HTTP-only cookies
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /auth/me:
     get:
       summary: Returnează utilizatorul autentificat
