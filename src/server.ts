@@ -3,12 +3,28 @@ import path from 'node:path';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJSDoc from 'swagger-jsdoc';
 import fs from 'node:fs';
+import cookieParser from 'cookie-parser';
+import cors from 'cors';
 import { config } from './config';
 import { authRoutes } from './routes/authRoutes';
 
 export function createApp() {
   const app = express();
+  
+  // Trust proxy pentru producție
+  app.set('trust proxy', 1);
+  
+  // CORS cu credentials
+  app.use(cors({
+    origin: config.clientOrigin,
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
+  }));
+  
   app.use(express.json());
+  app.use(cookieParser());
+  
   // Servește fișiere statice din public (pentru scriptul custom și alte resurse)
   app.use(express.static(path.join(process.cwd(), 'public')));
 
@@ -42,7 +58,7 @@ export function createApp() {
         },
       },
     },
-    apis: ['./src/controllers/*.ts', './src/routes/*.ts'],
+    apis: ['./src/routes/*.ts'],
   });
 
   app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {

@@ -1,32 +1,16 @@
 import { Router } from 'express';
-import { authController } from '../controllers/authController';
-import { authenticateToken } from '../middleware/auth';
+import authRouter from './auth';
 
 const router = Router();
 
 /**
  * @swagger
  * tags:
- *   name: Autentificare
- *   description: Operațiuni de autentificare și gestionare utilizatori
+ *   name: Auth
+ *   description: Operațiuni de autentificare și gestionare utilizatori cu cookie-uri HTTP-Only
  */
 
-/**
- * @swagger
- * components:
- *   securitySchemes:
- *     bearerAuth:
- *       type: http
- *       scheme: bearer
- *       bearerFormat: JWT
- */
-
-// Rute publice
-router.post('/register', authController.register.bind(authController));
-router.post('/login', authController.login.bind(authController));
-
-// Rute protejate
-router.get('/me', authenticateToken, authController.getProfile.bind(authController));
-router.post('/logout', authenticateToken, authController.logout.bind(authController));
+// Folosește rutele de autentificare cu cookie-uri
+router.use('/', authRouter);
 
 export { router as authRoutes };

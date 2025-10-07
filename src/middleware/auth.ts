@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { authService } from '../services/authService';
+import { readAccessToken } from '../utils/cookieUtils';
 
 export interface AuthenticatedRequest extends Request {
   user?: {
@@ -10,27 +11,24 @@ export interface AuthenticatedRequest extends Request {
 }
 
 /**
- * Middleware pentru autentificare JWT
+ * Middleware pentru autentificare JWT din cookie
  */
 export function authenticateToken(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+  const token = readAccessToken(req);
 
   if (!token) {
     return res.status(401).json({ 
-      error: 'Token de acces necesar',
-      message: 'Trebuie să furnizați un token de autentificare valid'
+      message: 'Unauthorized'
     });
   }
 
   try {
-    const user = authService.verifyToken(token);
+    const user = authService.verifyAccessToken(token);
     req.user = user;
     next();
   } catch (error) {
-    return res.status(403).json({ 
-      error: 'Token invalid',
-      message: 'Token-ul de autentificare este invalid sau a expirat'
+    return res.status(401).json({ 
+      message: 'Unauthorized'
     });
   }
 }
@@ -39,12 +37,11 @@ export function authenticateToken(req: AuthenticatedRequest, res: Response, next
  * Middleware opțional pentru autentificare (nu returnează eroare dacă nu există token)
  */
 export function optionalAuth(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  const token = readAccessToken(req);
 
   if (token) {
     try {
-      const user = authService.verifyToken(token);
+      const user = authService.verifyAccessToken(token);
       req.user = user;
     } catch (error) {
       // Ignoră eroarea pentru middleware-ul opțional

@@ -243,3 +243,4 @@ tasklist | findstr node
 - Parolele sunt criptate cu bcryptjs
 - Toate endpoint-urile returnează JSON
 - Erorile sunt returnate cu coduri HTTP corespunzătoare
+
