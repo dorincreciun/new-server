@@ -14,12 +14,15 @@ const router = Router();
  *       required: [id, email]
  *       properties:
  *         id:
- *           type: string
+ *           type: integer
+ *           example: 1
  *         email:
  *           type: string
  *           format: email
+ *           example: user@example.com
  *         name:
  *           type: string
+ *           example: Ion Popescu
  *     AuthResponse:
  *       type: object
  *       properties:
@@ -30,11 +33,78 @@ const router = Router();
  *       properties:
  *         message:
  *           type: string
+ *           example: Logged out
+ *     AuthRegisterRequest:
+ *       type: object
+ *       required: [email, password]
+ *       properties:
+ *         email:
+ *           type: string
+ *           format: email
+ *         password:
+ *           type: string
+ *           minLength: 6
+ *         name:
+ *           type: string
+ *       example:
+ *         email: user@example.com
+ *         password: secret123
+ *         name: Ion
+ *     AuthLoginRequest:
+ *       type: object
+ *       required: [email, password]
+ *       properties:
+ *         email:
+ *           type: string
+ *           format: email
+ *         password:
+ *           type: string
+ *       example:
+ *         email: user@example.com
+ *         password: secret123
  *     Error:
  *       type: object
  *       properties:
  *         message:
  *           type: string
+ *       examples:
+ *         MissingCredentials:
+ *           summary: Lipsesc credențiale
+ *           value:
+ *             message: Emailul și parola sunt obligatorii
+ *         WeakPassword:
+ *           summary: Parolă prea scurtă
+ *           value:
+ *             message: Parola trebuie să aibă cel puțin 6 caractere
+ *         InvalidEmail:
+ *           summary: Email invalid
+ *           value:
+ *             message: Adresa de email este invalidă
+ *         AccountExists:
+ *           summary: Cont deja înregistrat
+ *           value:
+ *             message: Acest cont a fost deja înregistrat
+ *         AccountNotFound:
+ *           summary: Cont inexistent
+ *           value:
+ *             message: Acest cont nu există
+ *         WrongPassword:
+ *           summary: Parolă incorectă
+ *           value:
+ *             message: Parola incorectă
+ *         Unauthorized:
+ *           summary: Neautorizat
+ *           value:
+ *             message: Unauthorized
+ *         ServerError:
+ *           summary: Eroare server
+ *           value:
+ *             message: Eroare internă a serverului
+ *   headers:
+ *     SetCookieHeader:
+ *       description: Header Set-Cookie care conține accesToken și refreshToken ca HTTP-only cookies
+ *       schema:
+ *         type: string
  */
 
 /**
@@ -48,49 +118,71 @@ const router = Router();
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             required: [email, password]
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *               password:
- *                 type: string
- *                 minLength: 6
- *               name:
- *                 type: string
+ *             $ref: '#/components/schemas/AuthRegisterRequest'
  *     responses:
  *       201:
  *         description: User created successfully
  *         headers:
  *           Set-Cookie:
- *             description: Access and refresh tokens set as HTTP-only cookies
- *             schema:
- *               type: string
+ *             $ref: '#/components/headers/SetCookieHeader'
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/AuthResponse'
+ *             examples:
+ *               Success:
+ *                 summary: Utilizator creat și autentificat
+ *                 value:
+ *                   user:
+ *                     id: 1
+ *                     email: user@example.com
+ *                     name: Ion
  *       400:
- *         description: Invalid input or email already exists
+ *         description: Invalid input or account already exists
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
+ *             examples:
+ *               MissingCredentials:
+ *                 $ref: '#/components/schemas/Error/examples/MissingCredentials'
+ *               WeakPassword:
+ *                 $ref: '#/components/schemas/Error/examples/WeakPassword'
+ *               InvalidEmail:
+ *                 $ref: '#/components/schemas/Error/examples/InvalidEmail'
+ *               AccountExists:
+ *                 $ref: '#/components/schemas/Error/examples/AccountExists'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             examples:
+ *               ServerError:
+ *                 $ref: '#/components/schemas/Error/examples/ServerError'
  */
 router.post('/register', async (req: Request, res: Response) => {
   try {
     const { email, password, name } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required' });
+      return res.status(400).json({ message: 'Emailul și parola sunt obligatorii' });
+    }
+
+    // Normalizează emailul
+    const normalizedEmail = String(email).trim().toLowerCase();
+    // Validare format email simplă
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(normalizedEmail)) {
+      return res.status(400).json({ message: 'Adresa de email este invalidă' });
     }
 
     if (password.length < 6) {
-      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+      return res.status(400).json({ message: 'Parola trebuie să aibă cel puțin 6 caractere' });
     }
 
-    const result = await authService.register({ email, password, name });
+    const result = await authService.register({ email: normalizedEmail, password, name });
     
     // Setează cookie-urile
     setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken);
@@ -99,11 +191,11 @@ router.post('/register', async (req: Request, res: Response) => {
       user: result.user
     });
   } catch (error: any) {
-    if (error.message === 'Email already exists') {
-      return res.status(400).json({ message: 'Email already exists' });
+    if (error.message === 'Contul cu acest email există deja' || error.message === 'Email already exists') {
+      return res.status(400).json({ message: 'Acest cont a fost deja înregistrat' });
     }
     console.error('Register error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ message: 'Eroare internă a serverului' });
   }
 });
 
@@ -118,42 +210,72 @@ router.post('/register', async (req: Request, res: Response) => {
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             required: [email, password]
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *               password:
- *                 type: string
+ *             $ref: '#/components/schemas/AuthLoginRequest'
  *     responses:
  *       200:
  *         description: Login successful
  *         headers:
  *           Set-Cookie:
- *             description: Access and refresh tokens set as HTTP-only cookies
- *             schema:
- *               type: string
+ *             $ref: '#/components/headers/SetCookieHeader'
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/AuthResponse'
+ *             examples:
+ *               Success:
+ *                 value:
+ *                   user:
+ *                     id: 1
+ *                     email: user@example.com
+ *                     name: Ion
+ *       400:
+ *         description: Missing credentials
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             examples:
+ *               MissingCredentials:
+ *                 $ref: '#/components/schemas/Error/examples/MissingCredentials'
+ *               InvalidEmail:
+ *                 $ref: '#/components/schemas/Error/examples/InvalidEmail'
  *       401:
  *         description: Invalid credentials
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
+ *             examples:
+ *               AccountNotFound:
+ *                 $ref: '#/components/schemas/Error/examples/AccountNotFound'
+ *               WrongPassword:
+ *                 $ref: '#/components/schemas/Error/examples/WrongPassword'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             examples:
+ *               ServerError:
+ *                 $ref: '#/components/schemas/Error/examples/ServerError'
  */
 router.post('/login', async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required' });
+      return res.status(400).json({ message: 'Emailul și parola sunt obligatorii' });
     }
 
-    const result = await authService.login({ email, password });
+    // Normalizează și validează emailul
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(normalizedEmail)) {
+      return res.status(400).json({ message: 'Adresa de email este invalidă' });
+    }
+
+    const result = await authService.login({ email: normalizedEmail, password });
     
     // Setează cookie-urile
     setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken);
@@ -162,11 +284,14 @@ router.post('/login', async (req: Request, res: Response) => {
       user: result.user
     });
   } catch (error: any) {
-    if (error.message === 'Invalid credentials') {
-      return res.status(401).json({ message: 'Invalid credentials' });
+    if (error.message === 'Parola incorectă') {
+      return res.status(401).json({ message: 'Parola incorectă' });
+    }
+    if (error.message === 'Acest cont nu există') {
+      return res.status(401).json({ message: 'Acest cont nu există' });
     }
     console.error('Login error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ message: 'Eroare internă a serverului' });
   }
 });
 
@@ -181,19 +306,36 @@ router.post('/login', async (req: Request, res: Response) => {
  *         description: Token refreshed successfully
  *         headers:
  *           Set-Cookie:
- *             description: New access and refresh tokens set as HTTP-only cookies
- *             schema:
- *               type: string
+ *             $ref: '#/components/headers/SetCookieHeader'
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/AuthResponse'
+ *             examples:
+ *               Success:
+ *                 value:
+ *                   user:
+ *                     id: 1
+ *                     email: user@example.com
+ *                     name: Ion
  *       401:
- *         description: Invalid or expired refresh token
+ *         description: Missing, invalid or expired refresh token
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
+ *             examples:
+ *               Unauthorized:
+ *                 $ref: '#/components/schemas/Error/examples/Unauthorized'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             examples:
+ *               ServerError:
+ *                 $ref: '#/components/schemas/Error/examples/ServerError'
  */
 router.post('/refresh', async (req: Request, res: Response) => {
   try {
@@ -225,6 +367,48 @@ router.post('/refresh', async (req: Request, res: Response) => {
 });
 
 // Support GET /refresh to address clients calling via GET
+/**
+ * @swagger
+ * /auth/refresh:
+ *   get:
+ *     summary: Refresh access token (GET support)
+ *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: Token refreshed successfully
+ *         headers:
+ *           Set-Cookie:
+ *             $ref: '#/components/headers/SetCookieHeader'
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuthResponse'
+ *             examples:
+ *               Success:
+ *                 value:
+ *                   user:
+ *                     id: 1
+ *                     email: user@example.com
+ *                     name: Ion
+ *       401:
+ *         description: Missing, invalid or expired refresh token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             examples:
+ *               Unauthorized:
+ *                 $ref: '#/components/schemas/Error/examples/Unauthorized'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             examples:
+ *               ServerError:
+ *                 $ref: '#/components/schemas/Error/examples/ServerError'
+ */
 router.get('/refresh', async (req: Request, res: Response) => {
   try {
     const refreshToken = readRefreshToken(req);
@@ -267,12 +451,31 @@ router.get('/refresh', async (req: Request, res: Response) => {
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/AuthResponse'
+ *             examples:
+ *               Success:
+ *                 value:
+ *                   user:
+ *                     id: 1
+ *                     email: user@example.com
+ *                     name: Ion
  *       401:
  *         description: Unauthorized
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
+ *             examples:
+ *               Unauthorized:
+ *                 $ref: '#/components/schemas/Error/examples/Unauthorized'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             examples:
+ *               ServerError:
+ *                 $ref: '#/components/schemas/Error/examples/ServerError'
  */
 router.get('/me', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
@@ -300,13 +503,26 @@ router.get('/me', authenticateToken, async (req: AuthenticatedRequest, res: Resp
  *         description: Logout successful
  *         headers:
  *           Set-Cookie:
- *             description: Access and refresh tokens cleared
+ *             description: Cookies cleared (accessToken, refreshToken)
  *             schema:
  *               type: string
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/LogoutResponse'
+ *             examples:
+ *               Success:
+ *                 value:
+ *                   message: Logged out
+ *       500:
+ *         description: Internal server error (logout still clears cookies and returns 200 in implementation)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             examples:
+ *               ServerError:
+ *                 $ref: '#/components/schemas/Error/examples/ServerError'
  */
 router.post('/logout', async (req: Request, res: Response) => {
   try {

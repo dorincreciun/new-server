@@ -35,13 +35,16 @@ export class AuthService {
   async register(data: RegisterData): Promise<{ user: UserPayload; tokens: TokenPair }> {
     const { email, name, password } = data;
 
+    // Normalizează email-ul (trim + lowercase)
+    const normalizedEmail = email.trim().toLowerCase();
+
     // Verifică dacă utilizatorul există deja
     const existingUser = await prisma.user.findUnique({
-      where: { email }
+      where: { email: normalizedEmail }
     });
 
     if (existingUser) {
-      throw new Error('Email already exists');
+      throw new Error('Contul cu acest email există deja');
     }
 
     // Criptează parola
@@ -51,7 +54,7 @@ export class AuthService {
     // Creează utilizatorul
     const user = await prisma.user.create({
       data: {
-        email,
+        email: normalizedEmail,
         name: name || null,
         passwordHash: hashedPassword,
       }
@@ -76,19 +79,22 @@ export class AuthService {
   async login(credentials: LoginCredentials): Promise<{ user: UserPayload; tokens: TokenPair }> {
     const { email, password } = credentials;
 
+    // Normalizează email-ul (trim + lowercase)
+    const normalizedEmail = email.trim().toLowerCase();
+
     // Găsește utilizatorul
     const user = await prisma.user.findUnique({
-      where: { email }
+      where: { email: normalizedEmail }
     });
 
     if (!user) {
-      throw new Error('Invalid credentials');
+      throw new Error('Acest cont nu există');
     }
 
     // Verifică parola
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordValid) {
-      throw new Error('Invalid credentials');
+      throw new Error('Parola incorectă');
     }
 
     // Generează tokenuri
