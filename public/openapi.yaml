@@ -12,7 +12,34 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
-    User:
+    UserDTO:
+      type: object
+      required:
+        - id
+        - email
+      properties:
+        id:
+          type: integer
+          example: 1
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        name:
+          type: string
+          example: Ion Popescu
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/UserDTO'
+    LogoutResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Logged out
+    AuthRegisterRequest:
       type: object
       required:
         - email
@@ -26,32 +53,311 @@ components:
           minLength: 6
         name:
           type: string
-    UserDTO:
+      example:
+        email: user@example.com
+        password: secret123
+        name: Ion
+    AuthLoginRequest:
       type: object
-      required: [id, email]
+      required:
+        - email
+        - password
       properties:
-        id:
-          type: string
         email:
           type: string
           format: email
-        name:
+        password:
           type: string
-    AuthResponse:
-      type: object
-      properties:
-        user:
-          $ref: '#/components/schemas/UserDTO'
-    LogoutResponse:
-      type: object
-      properties:
-        message:
-          type: string
+      example:
+        email: user@example.com
+        password: secret123
     Error:
       type: object
       properties:
         message:
           type: string
+      examples:
+        MissingCredentials:
+          summary: Lipsesc credențiale
+          value:
+            message: Emailul și parola sunt obligatorii
+        WeakPassword:
+          summary: Parolă prea scurtă
+          value:
+            message: Parola trebuie să aibă cel puțin 6 caractere
+        InvalidEmail:
+          summary: Email invalid
+          value:
+            message: Adresa de email este invalidă
+        AccountExists:
+          summary: Cont deja înregistrat
+          value:
+            message: Acest cont a fost deja înregistrat
+        AccountNotFound:
+          summary: Cont inexistent
+          value:
+            message: Acest cont nu există
+        WrongPassword:
+          summary: Parolă incorectă
+          value:
+            message: Parola incorectă
+        Unauthorized:
+          summary: Neautorizat
+          value:
+            message: Unauthorized
+        ServerError:
+          summary: Eroare server
+          value:
+            message: Eroare internă a serverului
+    Category:
+      type: object
+      required:
+        - name
+      properties:
+        id:
+          type: integer
+          description: ID-ul unic al categoriei
+          example: 1
+        name:
+          type: string
+          description: Numele categoriei
+          example: Carne
+        description:
+          type: string
+          description: Descrierea categoriei
+          example: Produse din carne
+        createdAt:
+          type: string
+          format: date-time
+          description: Data și ora creării
+          example: '2024-01-15T10:30:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Data și ora ultimei actualizări
+          example: '2024-01-15T10:30:00Z'
+    CreateCategoryRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: Numele categoriei
+          example: Carne
+        description:
+          type: string
+          description: Descrierea categoriei
+          example: Produse din carne de porc, vită, pui
+    UpdateCategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Numele categoriei
+          example: Carne și mezeluri
+        description:
+          type: string
+          description: Descrierea categoriei
+          example: Produse din carne și mezeluri
+    CategoryResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Categoria a fost creată cu succes
+        data:
+          $ref: '#/components/schemas/Category'
+    CategoryListResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Categoriile au fost obținute cu succes
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+        count:
+          type: integer
+          example: 5
+    CategoryStatsResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Statisticile categoriilor au fost obținute cu succes
+        data:
+          type: object
+          properties:
+            totalCategories:
+              type: integer
+              example: 10
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Eroare de validare
+    Product:
+      type: object
+      required:
+        - name
+        - price
+        - categoryId
+      properties:
+        id:
+          type: integer
+          description: ID-ul unic al produsului
+          example: 1
+        name:
+          type: string
+          description: Numele produsului
+          example: Carne de porc
+        description:
+          type: string
+          description: Descrierea produsului
+          example: Carne de porc proaspătă
+        price:
+          type: number
+          format: decimal
+          description: Prețul produsului
+          example: 25.5
+        stock:
+          type: integer
+          description: Cantitatea în stoc
+          example: 100
+        categoryId:
+          type: integer
+          description: ID-ul categoriei
+          example: 1
+        createdAt:
+          type: string
+          format: date-time
+          description: Data și ora creării
+          example: '2024-01-15T10:30:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Data și ora ultimei actualizări
+          example: '2024-01-15T10:30:00Z'
+        category:
+          $ref: '#/components/schemas/Category'
+    CreateProductRequest:
+      type: object
+      required:
+        - name
+        - price
+        - categoryId
+      properties:
+        name:
+          type: string
+          description: Numele produsului
+          example: Carne de porc
+        description:
+          type: string
+          description: Descrierea produsului
+          example: Carne de porc proaspătă
+        price:
+          type: number
+          format: decimal
+          description: Prețul produsului
+          example: 25.5
+        stock:
+          type: integer
+          description: Cantitatea în stoc
+          example: 100
+        categoryId:
+          type: integer
+          description: ID-ul categoriei
+          example: 1
+    UpdateProductRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Numele produsului
+          example: Carne de porc premium
+        description:
+          type: string
+          description: Descrierea produsului
+          example: Carne de porc premium proaspătă
+        price:
+          type: number
+          format: decimal
+          description: Prețul produsului
+          example: 30
+        stock:
+          type: integer
+          description: Cantitatea în stoc
+          example: 150
+        categoryId:
+          type: integer
+          description: ID-ul categoriei
+          example: 1
+    UpdateStockRequest:
+      type: object
+      required:
+        - stock
+      properties:
+        stock:
+          type: integer
+          description: Noua cantitate în stoc
+          example: 200
+    ProductResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Produsul a fost creat cu succes
+        data:
+          $ref: '#/components/schemas/Product'
+    ProductListResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Produsele au fost obținute cu succes
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+        count:
+          type: integer
+          example: 10
+    ProductStatsResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Statisticile produselor au fost obținute cu succes
+        data:
+          type: object
+          properties:
+            totalProducts:
+              type: integer
+              example: 50
+    LowStockResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Produsele cu stoc scăzut au fost obținute cu succes
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+        count:
+          type: integer
+          example: 5
+        threshold:
+          type: integer
+          example: 10
+  headers:
+    SetCookieHeader:
+      description: Header Set-Cookie care conține accesToken și refreshToken ca HTTP-only cookies
+      schema:
+        type: string
 paths:
   /auth/register:
     post:
@@ -63,25 +369,49 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/User'
+              $ref: '#/components/schemas/AuthRegisterRequest'
       responses:
         '201':
           description: User created successfully
           headers:
             Set-Cookie:
-              description: Access and refresh tokens set as HTTP-only cookies
-              schema:
-                type: string
+              $ref: '#/components/headers/SetCookieHeader'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthResponse'
+              examples:
+                Success:
+                  summary: Utilizator creat și autentificat
+                  value:
+                    user:
+                      id: 1
+                      email: user@example.com
+                      name: Ion
         '400':
-          description: Invalid input or email already exists
+          description: Invalid input or account already exists
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+              examples:
+                MissingCredentials:
+                  $ref: '#/components/schemas/Error/examples/MissingCredentials'
+                WeakPassword:
+                  $ref: '#/components/schemas/Error/examples/WeakPassword'
+                InvalidEmail:
+                  $ref: '#/components/schemas/Error/examples/InvalidEmail'
+                AccountExists:
+                  $ref: '#/components/schemas/Error/examples/AccountExists'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                ServerError:
+                  $ref: '#/components/schemas/Error/examples/ServerError'
   /auth/login:
     post:
       summary: Login user
@@ -92,34 +422,55 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - email
-                - password
-              properties:
-                email:
-                  type: string
-                  format: email
-                password:
-                  type: string
+              $ref: '#/components/schemas/AuthLoginRequest'
       responses:
         '200':
           description: Login successful
           headers:
             Set-Cookie:
-              description: Access and refresh tokens set as HTTP-only cookies
-              schema:
-                type: string
+              $ref: '#/components/headers/SetCookieHeader'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthResponse'
+              examples:
+                Success:
+                  value:
+                    user:
+                      id: 1
+                      email: user@example.com
+                      name: Ion
+        '400':
+          description: Missing credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                MissingCredentials:
+                  $ref: '#/components/schemas/Error/examples/MissingCredentials'
+                InvalidEmail:
+                  $ref: '#/components/schemas/Error/examples/InvalidEmail'
         '401':
           description: Invalid credentials
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+              examples:
+                AccountNotFound:
+                  $ref: '#/components/schemas/Error/examples/AccountNotFound'
+                WrongPassword:
+                  $ref: '#/components/schemas/Error/examples/WrongPassword'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                ServerError:
+                  $ref: '#/components/schemas/Error/examples/ServerError'
   /auth/refresh:
     post:
       summary: Refresh access token
@@ -130,41 +481,36 @@ paths:
           description: Token refreshed successfully
           headers:
             Set-Cookie:
-              description: New access and refresh tokens set as HTTP-only cookies
-              schema:
-                type: string
+              $ref: '#/components/headers/SetCookieHeader'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthResponse'
+              examples:
+                Success:
+                  value:
+                    user:
+                      id: 1
+                      email: user@example.com
+                      name: Ion
         '401':
-          description: Invalid or expired refresh token
+          description: Missing, invalid or expired refresh token
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-    get:
-      summary: Refresh access token
-      tags:
-        - Auth
-      responses:
-        '200':
-          description: Token refreshed successfully
-          headers:
-            Set-Cookie:
-              description: New access and refresh tokens set as HTTP-only cookies
-              schema:
-                type: string
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthResponse'
-        '401':
-          description: Invalid or expired refresh token
+              examples:
+                Unauthorized:
+                  $ref: '#/components/schemas/Error/examples/Unauthorized'
+        '500':
+          description: Internal server error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+              examples:
+                ServerError:
+                  $ref: '#/components/schemas/Error/examples/ServerError'
   /auth/me:
     get:
       summary: Returnează utilizatorul autentificat
@@ -177,12 +523,31 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthResponse'
+              examples:
+                Success:
+                  value:
+                    user:
+                      id: 1
+                      email: user@example.com
+                      name: Ion
         '401':
           description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+              examples:
+                Unauthorized:
+                  $ref: '#/components/schemas/Error/examples/Unauthorized'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                ServerError:
+                  $ref: '#/components/schemas/Error/examples/ServerError'
   /auth/logout:
     post:
       summary: Logout user
@@ -193,13 +558,753 @@ paths:
           description: Logout successful
           headers:
             Set-Cookie:
-              description: Access and refresh tokens cleared
+              description: Cookies cleared (accessToken, refreshToken)
               schema:
                 type: string
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/LogoutResponse'
+              examples:
+                Success:
+                  value:
+                    message: Logged out
+        '500':
+          description: Internal server error (logout still clears cookies and returns 200 in implementation)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                ServerError:
+                  $ref: '#/components/schemas/Error/examples/ServerError'
+  /api/categories:
+    post:
+      summary: Creează o nouă categorie
+      description: Creează o nouă categorie în sistem. Numele categoriei trebuie să fie unic.
+      tags:
+        - Categories
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCategoryRequest'
+            examples:
+              Carne:
+                summary: Categorie pentru carne
+                value:
+                  name: Carne
+                  description: Produse din carne de porc, vită, pui
+              Branza:
+                summary: Categorie pentru brânzeturi
+                value:
+                  name: Branza
+                  description: Brânze de diferite tipuri
+      responses:
+        '201':
+          description: Categoria a fost creată cu succes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+              examples:
+                Success:
+                  summary: Categoria creată cu succes
+                  value:
+                    message: Categoria a fost creată cu succes
+                    data:
+                      id: 1
+                      name: Carne
+                      description: Produse din carne de porc, vită, pui
+                      createdAt: '2024-01-15T10:30:00Z'
+                      updatedAt: '2024-01-15T10:30:00Z'
+        '400':
+          description: Date invalide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                MissingName:
+                  summary: Nume lipsă
+                  value:
+                    error: Numele categoriei este obligatoriu și trebuie să fie un string non-gol
+        '409':
+          description: Categoria există deja
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                DuplicateName:
+                  summary: Nume duplicat
+                  value:
+                    error: O categorie cu acest nume există deja
+        '500':
+          description: Eroare internă a serverului
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                ServerError:
+                  summary: Eroare server
+                  value:
+                    error: Eroare internă a serverului
+    get:
+      summary: Obține toate categoriile
+      description: Returnează o listă cu toate categoriile din sistem, sortate alfabetic după nume.
+      tags:
+        - Categories
+      responses:
+        '200':
+          description: Lista cu toate categoriile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryListResponse'
+              examples:
+                Success:
+                  summary: Lista categoriilor
+                  value:
+                    message: Categoriile au fost obținute cu succes
+                    data:
+                      - id: 1
+                        name: Branza
+                        description: Brânze de diferite tipuri
+                        createdAt: '2024-01-15T10:08:15.917Z'
+                        updatedAt: '2024-01-15T10:08:15.917Z'
+                      - id: 2
+                        name: Carne
+                        description: Produse din carne de porc, vită, pui
+                        createdAt: '2024-01-15T10:08:11.243Z'
+                        updatedAt: '2024-01-15T10:08:11.243Z'
+                      - id: 3
+                        name: Lactate
+                        description: Produse lactate
+                        createdAt: '2024-01-15T10:08:19.906Z'
+                        updatedAt: '2024-01-15T10:08:19.906Z'
+                    count: 3
+        '500':
+          description: Eroare internă a serverului
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                ServerError:
+                  summary: Eroare server
+                  value:
+                    error: Eroare internă a serverului
+  /api/categories/stats:
+    get:
+      summary: Obține statistici despre categorii
+      tags:
+        - Categories
+      responses:
+        '200':
+          description: Statisticile categoriilor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryStatsResponse'
+        '500':
+          description: Eroare internă a serverului
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/categories/{id}:
+    get:
+      summary: Obține o categorie după ID
+      tags:
+        - Categories
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID-ul categoriei
+          example: 1
+      responses:
+        '200':
+          description: Categoria a fost găsită
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+        '400':
+          description: ID invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Categoria nu a fost găsită
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Eroare internă a serverului
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      summary: Actualizează o categorie
+      tags:
+        - Categories
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID-ul categoriei
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCategoryRequest'
+      responses:
+        '200':
+          description: Categoria a fost actualizată cu succes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+        '400':
+          description: Date invalide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Categoria nu a fost găsită
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Numele categoriei există deja
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Eroare internă a serverului
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Șterge o categorie
+      tags:
+        - Categories
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID-ul categoriei
+          example: 1
+      responses:
+        '200':
+          description: Categoria a fost ștearsă cu succes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Categoria a fost ștearsă cu succes
+        '400':
+          description: ID invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Categoria nu a fost găsită
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Eroare internă a serverului
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/products:
+    post:
+      summary: Creează un nou produs
+      tags:
+        - Products
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductRequest'
+      responses:
+        '201':
+          description: Produsul a fost creat cu succes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+        '400':
+          description: Date invalide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Categoria specificată nu există
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Eroare internă a serverului
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      summary: Obține toate produsele
+      tags:
+        - Products
+      responses:
+        '200':
+          description: Lista cu toate produsele
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductListResponse'
+        '500':
+          description: Eroare internă a serverului
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/products/search:
+    get:
+      summary: Caută produse după nume
+      tags:
+        - Products
+      parameters:
+        - in: query
+          name: name
+          required: true
+          schema:
+            type: string
+          description: Numele produsului de căutat
+          example: carne
+      responses:
+        '200':
+          description: Rezultatele căutării
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductListResponse'
+        '400':
+          description: Parametrul de căutare lipsă
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Eroare internă a serverului
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/products/low-stock:
+    get:
+      summary: Obține produsele cu stoc scăzut
+      tags:
+        - Products
+      parameters:
+        - in: query
+          name: threshold
+          required: false
+          schema:
+            type: integer
+            default: 10
+          description: Pragul pentru stoc scăzut
+          example: 5
+      responses:
+        '200':
+          description: Produsele cu stoc scăzut
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LowStockResponse'
+        '400':
+          description: Prag invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Eroare internă a serverului
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/products/stats:
+    get:
+      summary: Obține statistici despre produse
+      tags:
+        - Products
+      responses:
+        '200':
+          description: Statisticile produselor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductStatsResponse'
+        '500':
+          description: Eroare internă a serverului
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/products/category/{categoryId}:
+    get:
+      summary: Obține produsele dintr-o anumită categorie
+      description: Returnează toate produsele care aparțin unei categorii specifice, identificată prin ID. Aceasta este funcționalitatea principală pentru obținerea produselor după categorie.
+      tags:
+        - Products
+      parameters:
+        - in: path
+          name: categoryId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: ID-ul unic al categoriei
+          example: 1
+      responses:
+        '200':
+          description: Produsele din categoria specificată
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductListResponse'
+              examples:
+                Success:
+                  summary: Produse din categoria Carne
+                  value:
+                    message: Produsele din categoria specificată au fost obținute cu succes
+                    data:
+                      - id: 1
+                        name: Carne de porc
+                        description: Carne de porc proaspata
+                        price: '25.5'
+                        stock: 100
+                        categoryId: 1
+                        createdAt: '2024-01-15T10:08:33.750Z'
+                        updatedAt: '2024-01-15T10:08:33.750Z'
+                        category:
+                          id: 1
+                          name: Carne
+                          description: Produse din carne de porc, vită, pui
+                          createdAt: '2024-01-15T10:08:11.243Z'
+                          updatedAt: '2024-01-15T10:08:11.243Z'
+                      - id: 2
+                        name: Carne de vita
+                        description: Carne de vita premium
+                        price: '45'
+                        stock: 50
+                        categoryId: 1
+                        createdAt: '2024-01-15T10:08:39.356Z'
+                        updatedAt: '2024-01-15T10:08:39.356Z'
+                        category:
+                          id: 1
+                          name: Carne
+                          description: Produse din carne de porc, vită, pui
+                          createdAt: '2024-01-15T10:08:11.243Z'
+                          updatedAt: '2024-01-15T10:08:11.243Z'
+                    count: 2
+                Empty:
+                  summary: Categoria fără produse
+                  value:
+                    message: Produsele din categoria specificată au fost obținute cu succes
+                    data: []
+                    count: 0
+        '400':
+          description: ID invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                InvalidID:
+                  summary: ID invalid
+                  value:
+                    error: ID-ul categoriei trebuie să fie un număr întreg pozitiv
+        '500':
+          description: Eroare internă a serverului
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                ServerError:
+                  summary: Eroare server
+                  value:
+                    error: Eroare internă a serverului
+  /api/products/category-name/{categoryName}:
+    get:
+      summary: Obține produsele dintr-o anumită categorie (după numele categoriei)
+      description: Returnează toate produsele care aparțin unei categorii specifice, identificată prin numele categoriei. Alternativă la căutarea după ID.
+      tags:
+        - Products
+      parameters:
+        - in: path
+          name: categoryName
+          required: true
+          schema:
+            type: string
+            minLength: 1
+          description: Numele exact al categoriei (case-sensitive)
+          example: Branza
+      responses:
+        '200':
+          description: Produsele din categoria specificată
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductListResponse'
+              examples:
+                Success:
+                  summary: Produse din categoria Branza
+                  value:
+                    message: Produsele din categoria specificată au fost obținute cu succes
+                    data:
+                      - id: 3
+                        name: Cascaval
+                        description: Cascaval de vaca
+                        price: '18.75'
+                        stock: 75
+                        categoryId: 2
+                        createdAt: '2024-01-15T10:08:45.115Z'
+                        updatedAt: '2024-01-15T10:08:45.115Z'
+                        category:
+                          id: 2
+                          name: Branza
+                          description: Brânze de diferite tipuri
+                          createdAt: '2024-01-15T10:08:15.917Z'
+                          updatedAt: '2024-01-15T10:08:15.917Z'
+                    count: 1
+                Empty:
+                  summary: Categoria fără produse
+                  value:
+                    message: Produsele din categoria specificată au fost obținute cu succes
+                    data: []
+                    count: 0
+        '400':
+          description: Numele categoriei invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                InvalidName:
+                  summary: Nume invalid
+                  value:
+                    error: Numele categoriei este obligatoriu și trebuie să fie un string non-gol
+        '500':
+          description: Eroare internă a serverului
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                ServerError:
+                  summary: Eroare server
+                  value:
+                    error: Eroare internă a serverului
+  /api/products/{id}:
+    get:
+      summary: Obține un produs după ID
+      tags:
+        - Products
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID-ul produsului
+          example: 1
+      responses:
+        '200':
+          description: Produsul a fost găsit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+        '400':
+          description: ID invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Produsul nu a fost găsit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Eroare internă a serverului
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      summary: Actualizează un produs
+      tags:
+        - Products
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID-ul produsului
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProductRequest'
+      responses:
+        '200':
+          description: Produsul a fost actualizat cu succes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+        '400':
+          description: Date invalide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Produsul sau categoria nu a fost găsită
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Eroare internă a serverului
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Șterge un produs
+      tags:
+        - Products
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID-ul produsului
+          example: 1
+      responses:
+        '200':
+          description: Produsul a fost șters cu succes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Produsul a fost șters cu succes
+        '400':
+          description: ID invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Produsul nu a fost găsit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Eroare internă a serverului
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/products/{id}/stock:
+    put:
+      summary: Actualizează stocul unui produs
+      tags:
+        - Products
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID-ul produsului
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateStockRequest'
+      responses:
+        '200':
+          description: Stocul produsului a fost actualizat cu succes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+        '400':
+          description: Date invalide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Produsul nu a fost găsit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Eroare internă a serverului
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 tags:
   - name: Auth
     description: Operațiuni de autentificare și gestionare utilizatori cu cookie-uri HTTP-Only
+  - name: Categories
+    description: Gestionarea categoriilor de produse
+  - name: Products
+    description: Gestionarea produselor și căutarea după categorii

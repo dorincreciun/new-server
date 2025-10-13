@@ -7,6 +7,8 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import { config } from './config';
 import { authRoutes } from './routes/authRoutes';
+import { categoryRoutes } from './routes/categoryRoutes';
+import { productRoutes } from './routes/productRoutes';
 
 export function createApp() {
   const app = express();
@@ -35,6 +37,8 @@ export function createApp() {
 
   // API routes
   app.use('/api/auth', authRoutes);
+  app.use('/api/categories', categoryRoutes);
+  app.use('/api/products', productRoutes);
 
   // Swagger specification via swagger-jsdoc
   const swaggerSpec = swaggerJSDoc({
@@ -43,7 +47,7 @@ export function createApp() {
       info: {
         title: config.swaggerTitle,
         version: config.swaggerVersion,
-        description: 'API pentru sistemul de autorizare cu JWT',
+        description: 'API pentru sistemul de autorizare cu JWT și gestionarea categoriilor și produselor',
       },
       servers: config.swaggerServerUrl
         ? [{ url: config.swaggerServerUrl }]
