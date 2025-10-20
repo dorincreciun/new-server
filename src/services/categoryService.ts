@@ -17,8 +17,12 @@ export class CategoryService {
    * Creează o nouă categorie
    */
   async createCategory(data: CreateCategoryData): Promise<Category> {
+    const slug = this.generateSlug(data.name);
+    if (slug === 'toate') {
+      throw new Error('INVALID_SLUG_TOATE');
+    }
     return await prisma.category.create({
-      data,
+      data: { ...data, slug },
     });
   }
 
@@ -52,12 +56,28 @@ export class CategoryService {
   }
 
   /**
+   * Obține o categorie după slug
+   */
+  async getCategoryBySlug(slug: string): Promise<Category | null> {
+    return await prisma.category.findUnique({
+      where: { slug },
+    });
+  }
+
+  /**
    * Actualizează o categorie
    */
   async updateCategory(id: number, data: UpdateCategoryData): Promise<Category> {
+    const updateData: any = { ...data };
+    if (data.name) {
+      updateData.slug = this.generateSlug(data.name);
+      if (updateData.slug === 'toate') {
+        throw new Error('INVALID_SLUG_TOATE');
+      }
+    }
     return await prisma.category.update({
       where: { id },
-      data,
+      data: updateData,
     });
   }
 
@@ -86,5 +106,14 @@ export class CategoryService {
    */
   async getCategoriesCount(): Promise<number> {
     return await prisma.category.count();
+  }
+
+  private generateSlug(name: string): string {
+    return name
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)+/g, '');
   }
 }

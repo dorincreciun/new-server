@@ -118,6 +118,10 @@ components:
           type: integer
           description: ID-ul unic al categoriei
           example: 1
+        slug:
+          type: string
+          description: Identificator URL-friendly al categoriei
+          example: carne
         name:
           type: string
           description: Numele categoriei
@@ -578,7 +582,7 @@ paths:
               examples:
                 ServerError:
                   $ref: '#/components/schemas/Error/examples/ServerError'
-  /api/categories:
+  /categories:
     post:
       summary: Creează o nouă categorie
       description: Creează o nouă categorie în sistem. Numele categoriei trebuie să fie unic.
@@ -697,7 +701,7 @@ paths:
                   summary: Eroare server
                   value:
                     error: Eroare internă a serverului
-  /api/categories/stats:
+  /categories/stats:
     get:
       summary: Obține statistici despre categorii
       tags:
@@ -715,7 +719,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /api/categories/{id}:
+  /categories/{id}:
     get:
       summary: Obține o categorie după ID
       tags:
@@ -843,7 +847,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /api/products:
+  /products:
     post:
       summary: Creează un nou produs
       tags:
@@ -896,7 +900,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /api/products/search:
+  /products/search:
     get:
       summary: Caută produse după nume
       tags:
@@ -928,7 +932,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /api/products/low-stock:
+  /products/low-stock:
     get:
       summary: Obține produsele cu stoc scăzut
       tags:
@@ -961,7 +965,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /api/products/stats:
+  /products/stats:
     get:
       summary: Obține statistici despre produse
       tags:
@@ -979,7 +983,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /api/products/category/{categoryId}:
+  /products/category/{categoryId}:
     get:
       summary: Obține produsele dintr-o anumită categorie
       description: Returnează toate produsele care aparțin unei categorii specifice, identificată prin ID. Aceasta este funcționalitatea principală pentru obținerea produselor după categorie.
@@ -1064,7 +1068,7 @@ paths:
                   summary: Eroare server
                   value:
                     error: Eroare internă a serverului
-  /api/products/category-name/{categoryName}:
+  /products/category-name/{categoryName}:
     get:
       summary: Obține produsele dintr-o anumită categorie (după numele categoriei)
       description: Returnează toate produsele care aparțin unei categorii specifice, identificată prin numele categoriei. Alternativă la căutarea după ID.
@@ -1135,7 +1139,41 @@ paths:
                   summary: Eroare server
                   value:
                     error: Eroare internă a serverului
-  /api/products/{id}:
+  /products/category-slug/{slug}:
+    get:
+      summary: Obține produsele dintr-o categorie după slug
+      description: Returnează toate produsele care aparțin unei categorii, identificată prin slug.
+      tags:
+        - Products
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+            minLength: 1
+          description: Slug-ul categoriei
+          example: carne
+      responses:
+        '200':
+          description: Produsele din categoria specificată
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductListResponse'
+        '400':
+          description: Slug invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Eroare internă a serverului
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /products/{id}:
     get:
       summary: Obține un produs după ID
       tags:
@@ -1257,7 +1295,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /api/products/{id}/stock:
+  /products/{id}/stock:
     put:
       summary: Actualizează stocul unui produs
       tags:

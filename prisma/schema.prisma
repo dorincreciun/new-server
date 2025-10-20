@@ -34,6 +34,7 @@ model RefreshToken {
 
 model Category {
   id          Int       @id @default(autoincrement())
+  slug        String    @unique
   name        String    @unique
   description String?
   createdAt   DateTime  @default(now())
@@ -41,6 +42,7 @@ model Category {
   products    Product[]
 
   @@index([name])
+  @@index([slug])
 }
 
 model Product {
@@ -50,10 +52,50 @@ model Product {
   price       Decimal   @db.Decimal(10, 2)
   stock       Int       @default(0)
   categoryId  Int
+  imageUrl    String?   // URL imagine principală a produsului
+  popularity  Int       @default(0)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  
+  // Noi câmpuri pentru filtrare
+  flags       Json?     // Array de flaguri (ex: ["vegetarian", "spicy", "gluten-free"])
+  ingredients Json?     // Array de ingrediente
+  variants    Json?     // Variante (ex: {"size": ["small", "medium", "large"], "crust": ["thin", "thick"]})
+  minPrice    Decimal?  @db.Decimal(10, 2)  // Preț minim pentru variante
+  maxPrice    Decimal?  @db.Decimal(10, 2)  // Preț maxim pentru variante
 
   @@index([categoryId])
   @@index([name])
+  @@index([createdAt])
+  @@index([price])
+  @@index([popularity])
+}
+
+// Cataloge pentru filtre (chei stabile pentru frontend). Nu impunem relații încă.
+model IngredientCatalog {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique // ex: "mozzarella"
+  label     String?
+  createdAt DateTime @default(now())
+
+  @@index([key])
+}
+
+model FlagCatalog {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique // ex: "vegan"
+  label     String?
+  createdAt DateTime @default(now())
+
+  @@index([key])
+}
+
+model VariantOptionCatalog {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique // ex: "large", "thin"
+  label     String?
+  createdAt DateTime @default(now())
+
+  @@index([key])
 }

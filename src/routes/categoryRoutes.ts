@@ -20,6 +20,10 @@ const categoryController = new CategoryController();
  *           type: integer
  *           description: ID-ul unic al categoriei
  *           example: 1
+ *         slug:
+ *           type: string
+ *           description: Identificator URL-friendly al categoriei
+ *           example: "carne"
  *         name:
  *           type: string
  *           description: Numele categoriei
@@ -111,7 +115,7 @@ const categoryController = new CategoryController();
 
 /**
  * @swagger
- * /api/categories:
+ * /categories:
  *   post:
  *     summary: Creează o nouă categorie
  *     description: Creează o nouă categorie în sistem. Numele categoriei trebuie să fie unic.
@@ -189,7 +193,7 @@ router.post('/', (req, res) => categoryController.createCategory(req, res));
 
 /**
  * @swagger
- * /api/categories:
+ * /categories:
  *   get:
  *     summary: Obține toate categoriile
  *     description: Returnează o listă cu toate categoriile din sistem, sortate alfabetic după nume.
@@ -200,29 +204,12 @@ router.post('/', (req, res) => categoryController.createCategory(req, res));
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/CategoryListResponse'
- *             examples:
- *               Success:
- *                 summary: Lista categoriilor
- *                 value:
- *                   message: "Categoriile au fost obținute cu succes"
- *                   data:
- *                     - id: 1
- *                       name: "Branza"
- *                       description: "Brânze de diferite tipuri"
- *                       createdAt: "2024-01-15T10:08:15.917Z"
- *                       updatedAt: "2024-01-15T10:08:15.917Z"
- *                     - id: 2
- *                       name: "Carne"
- *                       description: "Produse din carne de porc, vită, pui"
- *                       createdAt: "2024-01-15T10:08:11.243Z"
- *                       updatedAt: "2024-01-15T10:08:11.243Z"
- *                     - id: 3
- *                       name: "Lactate"
- *                       description: "Produse lactate"
- *                       createdAt: "2024-01-15T10:08:19.906Z"
- *                       updatedAt: "2024-01-15T10:08:19.906Z"
- *                   count: 3
+ *               type: object
+ *               properties:
+ *                 items:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Category'
  *       500:
  *         description: Eroare internă a serverului
  *         content:
@@ -236,10 +223,40 @@ router.post('/', (req, res) => categoryController.createCategory(req, res));
  *                   error: "Eroare internă a serverului"
  */
 router.get('/', (req, res) => categoryController.getAllCategories(req, res));
+/**
+ * @swagger
+ * /categories/{slug}:
+ *   get:
+ *     summary: Obține o categorie după slug
+ *     tags: [Categories]
+ *     parameters:
+ *       - in: path
+ *         name: slug
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Slug-ul categoriei ("toate" nu este permis)
+ *     responses:
+ *       200:
+ *         description: Categoria găsită
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   $ref: '#/components/schemas/Category'
+ *       400:
+ *         description: Slug invalid
+ *       404:
+ *         description: Categoria nu a fost găsită
+ */
+router.get('/:slug', (req, res) => categoryController.getCategoryBySlug(req, res));
+
 
 /**
  * @swagger
- * /api/categories/stats:
+ * /categories/stats:
  *   get:
  *     summary: Obține statistici despre categorii
  *     tags: [Categories]
@@ -261,7 +278,7 @@ router.get('/stats', (req, res) => categoryController.getCategoryStats(req, res)
 
 /**
  * @swagger
- * /api/categories/{id}:
+ * /categories/{id}:
  *   get:
  *     summary: Obține o categorie după ID
  *     tags: [Categories]
@@ -303,7 +320,7 @@ router.get('/:id', (req, res) => categoryController.getCategoryById(req, res));
 
 /**
  * @swagger
- * /api/categories/{id}:
+ * /categories/{id}:
  *   put:
  *     summary: Actualizează o categorie
  *     tags: [Categories]
@@ -357,7 +374,7 @@ router.put('/:id', (req, res) => categoryController.updateCategory(req, res));
 
 /**
  * @swagger
- * /api/categories/{id}:
+ * /categories/{id}:
  *   delete:
  *     summary: Șterge o categorie
  *     tags: [Categories]

@@ -33,7 +33,16 @@ export class CategoryController {
         description: description?.trim() || undefined,
       };
 
-      const category = await categoryService.createCategory(categoryData);
+      let category;
+      try {
+        category = await categoryService.createCategory(categoryData);
+      } catch (e: any) {
+        if (e?.message === 'INVALID_SLUG_TOATE') {
+          res.status(400).json({ error: 'Slug-ul "toate" este rezervat pentru frontend și nu poate fi folosit.' });
+          return;
+        }
+        throw e;
+      }
 
       res.status(201).json({
         message: 'Categoria a fost creată cu succes',
@@ -52,13 +61,8 @@ export class CategoryController {
    */
   async getAllCategories(req: Request, res: Response): Promise<void> {
     try {
-      const categories = await categoryService.getAllCategories();
-
-      res.status(200).json({
-        message: 'Categoriile au fost obținute cu succes',
-        data: categories,
-        count: categories.length,
-      });
+      const items = await categoryService.getAllCategories();
+      res.status(200).json({ items });
     } catch (error) {
       console.error('Eroare la obținerea categoriilor:', error);
       res.status(500).json({
@@ -99,6 +103,32 @@ export class CategoryController {
       res.status(500).json({
         error: 'Eroare internă a serverului',
       });
+    }
+  }
+
+  /**
+   * Obține o categorie după slug
+   */
+  async getCategoryBySlug(req: Request, res: Response): Promise<void> {
+    try {
+      const slug = String(req.params.slug || '').trim();
+      if (!slug) {
+        res.status(400).json({ error: 'Slug invalid' });
+        return;
+      }
+      if (slug === 'toate') {
+        res.status(404).json({ error: 'Categoria nu a fost găsită' });
+        return;
+      }
+      const category = await categoryService.getCategoryBySlug(slug);
+      if (!category) {
+        res.status(404).json({ error: 'Categoria nu a fost găsită' });
+        return;
+      }
+      res.status(200).json({ data: category });
+    } catch (error) {
+      console.error('Eroare la obținerea categoriei după slug:', error);
+      res.status(500).json({ error: 'Eroare internă a serverului' });
     }
   }
 
@@ -151,7 +181,16 @@ export class CategoryController {
         updateData.description = description?.trim() || undefined;
       }
 
-      const updatedCategory = await categoryService.updateCategory(id, updateData);
+      let updatedCategory;
+      try {
+        updatedCategory = await categoryService.updateCategory(id, updateData);
+      } catch (e: any) {
+        if (e?.message === 'INVALID_SLUG_TOATE') {
+          res.status(400).json({ error: 'Slug-ul "toate" este rezervat pentru frontend și nu poate fi folosit.' });
+          return;
+        }
+        throw e;
+      }
 
       res.status(200).json({
         message: 'Categoria a fost actualizată cu succes',

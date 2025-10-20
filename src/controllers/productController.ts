@@ -65,6 +65,100 @@ export class ProductController {
   }
 
   /**
+   * Obține facets (flags/ingredients/variants) pentru o categorie după slug
+   */
+  async getFacetsByCategorySlug(req: Request, res: Response): Promise<void> {
+    try {
+      const slug = req.params.slug;
+      if (!slug || typeof slug !== 'string' || slug.trim().length === 0) {
+        res.status(400).json({ error: 'Slug-ul categoriei este obligatoriu' });
+        return;
+      }
+
+      const facets = await productService.getFacetsByCategorySlug(slug.trim());
+      res.status(200).json({ message: 'Facets obținute cu succes', data: facets });
+    } catch (error) {
+      console.error('Eroare la obținerea facets:', error);
+      res.status(500).json({ error: 'Eroare internă a serverului' });
+    }
+  }
+
+  /**
+   * Filtrează produse după multiple criterii (categorySlug, search, flags, ingredients, variants, priceMin, priceMax)
+   */
+  async filterProducts(req: Request, res: Response): Promise<void> {
+    try {
+      const categorySlug = typeof req.query.categorySlug === 'string' ? req.query.categorySlug : undefined;
+      const search = typeof req.query.search === 'string' ? req.query.search : undefined;
+
+      const flags = req.query.flags
+        ? Array.isArray(req.query.flags)
+          ? (req.query.flags as string[])
+          : String(req.query.flags).split(',')
+        : undefined;
+      const flagsMode = (req.query.flagsMode as string) === 'all' ? 'all' : 'any';
+
+      const ingredients = req.query.ingredients
+        ? Array.isArray(req.query.ingredients)
+          ? (req.query.ingredients as string[])
+          : String(req.query.ingredients).split(',')
+        : undefined;
+      const ingredientsMode = (req.query.ingredientsMode as string) === 'any' ? 'any' : 'all';
+
+      // Pentru variants acceptăm listă plată (ex: ?variants=large&variants=thin)
+      const variants = req.query.variants
+        ? Array.isArray(req.query.variants)
+          ? (req.query.variants as string[])
+          : String(req.query.variants).split(',')
+        : undefined;
+      const variantsMode = (req.query.variantsMode as string) === 'all' ? 'all' : 'any';
+
+      const priceMin = req.query.priceMin !== undefined ? Number(req.query.priceMin) : undefined;
+      const priceMax = req.query.priceMax !== undefined ? Number(req.query.priceMax) : undefined;
+      const page = req.query.page ? Math.max(Number(req.query.page), 1) : 1;
+      const pageSizeRaw = req.query.pageSize ? Number(req.query.pageSize) : 20;
+      const pageSize = Math.min(Math.max(pageSizeRaw, 1), 100);
+      const sortByRaw = (req.query.sortBy as string) || 'createdAt';
+      const sortBy = ['price', 'createdAt', 'popularity'].includes(sortByRaw) ? (sortByRaw as any) : 'createdAt';
+      const orderRaw = (req.query.order as string) || 'desc';
+      const order = ['asc', 'desc'].includes(orderRaw) ? (orderRaw as any) : 'desc';
+
+      if (Number.isNaN(priceMin!) || Number.isNaN(priceMax!)) {
+        res.status(400).json({ error: 'Parametrii priceMin/priceMax trebuie să fie numerici' });
+        return;
+      }
+
+      const result = await productService.filterProductsPaginated({
+        categorySlug: categorySlug?.trim(),
+        search: search?.trim(),
+        flags,
+        flagsMode,
+        ingredients,
+        ingredientsMode,
+        variants,
+        variantsMode,
+        priceMin,
+        priceMax,
+        page,
+        pageSize,
+        sortBy,
+        order,
+      });
+
+      res.status(200).json({
+        message: 'Filtrarea produselor a fost efectuată cu succes',
+        items: result.items,
+        page: result.page,
+        pageSize: result.pageSize,
+        total: result.total,
+      });
+    } catch (error) {
+      console.error('Eroare la filtrarea produselor:', error);
+      res.status(500).json({ error: 'Eroare internă a serverului' });
+    }
+  }
+
+  /**
    * Obține toate produsele
    */
   async getAllProducts(req: Request, res: Response): Promise<void> {
@@ -136,6 +230,35 @@ export class ProductController {
       });
     } catch (error) {
       console.error('Eroare la obținerea produselor din categorie:', error);
+      res.status(500).json({
+        error: 'Eroare internă a serverului',
+      });
+    }
+  }
+
+  /**
+   * Obține produsele dintr-o anumită categorie (după slug-ul categoriei)
+   */
+  async getProductsByCategorySlug(req: Request, res: Response): Promise<void> {
+    try {
+      const slug = req.params.slug;
+
+      if (!slug || typeof slug !== 'string' || slug.trim().length === 0) {
+        res.status(400).json({
+          error: 'Slug-ul categoriei este obligatoriu și trebuie să fie un string non-gol',
+        });
+        return;
+      }
+
+      const products = await productService.getProductsByCategorySlug(slug.trim());
+
+      res.status(200).json({
+        message: 'Produsele din categoria specificată au fost obținute cu succes',
+        data: products,
+        count: products.length,
+      });
+    } catch (error) {
+      console.error('Eroare la obținerea produselor din categorie după slug:', error);
       res.status(500).json({
         error: 'Eroare internă a serverului',
       });

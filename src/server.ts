@@ -9,6 +9,7 @@ import { config } from './config';
 import { authRoutes } from './routes/authRoutes';
 import { categoryRoutes } from './routes/categoryRoutes';
 import { productRoutes } from './routes/productRoutes';
+import { taxonomyRoutes } from './routes/taxonomyRoutes';
 
 export function createApp() {
   const app = express();
@@ -39,6 +40,7 @@ export function createApp() {
   app.use('/api/auth', authRoutes);
   app.use('/api/categories', categoryRoutes);
   app.use('/api/products', productRoutes);
+  app.use('/api/taxonomies', taxonomyRoutes); // TODO: protejează cu RBAC (admin/moderator)
 
   // Swagger specification via swagger-jsdoc
   const swaggerSpec = swaggerJSDoc({
