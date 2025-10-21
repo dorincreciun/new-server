@@ -8,94 +8,143 @@ datasource db {
 }
 
 model User {
-  id           Int            @id @default(autoincrement())
-  email        String         @unique
-  name         String?
-  passwordHash String
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  id            Int            @id @default(autoincrement())
+  email         String         @unique
+  name          String?
+  passwordHash  String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   refreshTokens RefreshToken[]
 }
 
 model RefreshToken {
-  id        Int       @id @default(autoincrement())
-  userId    Int
-  expiresAt DateTime
-  createdAt DateTime  @default(now())
-  ipAddress String?
-  jti       String    @unique
-  revokedAt DateTime?
-  tokenHash String    @unique
-  userAgent String?
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  id         Int       @id @default(autoincrement())
+  userId     Int
+  expiresAt  DateTime
+  createdAt  DateTime  @default(now())
+  ipAddress  String?
+  jti        String    @unique
+  revokedAt  DateTime?
+  tokenHash  String    @unique
+  userAgent  String?
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@index([userId])
 }
 
 model Category {
-  id          Int       @id @default(autoincrement())
-  slug        String    @unique
-  name        String    @unique
+  id          Int        @id @default(autoincrement())
+  slug        String     @unique
+  name        String     @unique
   description String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
   products    Product[]
-
   @@index([name])
   @@index([slug])
 }
 
 model Product {
-  id          Int       @id @default(autoincrement())
-  name        String
-  description String?
-  price       Decimal   @db.Decimal(10, 2)
-  stock       Int       @default(0)
-  categoryId  Int
-  imageUrl    String?   // URL imagine principală a produsului
-  popularity  Int       @default(0)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  
-  // Noi câmpuri pentru filtrare
-  flags       Json?     // Array de flaguri (ex: ["vegetarian", "spicy", "gluten-free"])
-  ingredients Json?     // Array de ingrediente
-  variants    Json?     // Variante (ex: {"size": ["small", "medium", "large"], "crust": ["thin", "thick"]})
-  minPrice    Decimal?  @db.Decimal(10, 2)  // Preț minim pentru variante
-  maxPrice    Decimal?  @db.Decimal(10, 2)  // Preț maxim pentru variante
+  id             Int           @id @default(autoincrement())
+  name           String
+  description    String?
+  basePrice      Decimal       @db.Decimal(10, 2)
+  minPrice       Decimal?      @db.Decimal(10, 2)
+  maxPrice       Decimal?      @db.Decimal(10, 2)
+  imageUrl       String?
+  popularity     Int           @default(0)
+  ratingAverage  Decimal?      @db.Decimal(3, 2)
+  ratingCount    Int           @default(0)
+  isCustomizable Boolean       @default(false)
+  releasedAt     DateTime?
+  stock          Int           @default(0)
+  categoryId     Int
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  category       Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  flags          ProductFlag[]
+  ingredients    ProductIngredient[]
+  variants       ProductVariant[]
 
   @@index([categoryId])
   @@index([name])
   @@index([createdAt])
-  @@index([price])
   @@index([popularity])
+  @@index([ratingAverage])
+  @@index([releasedAt])
+  @@index([basePrice])
 }
 
-// Cataloge pentru filtre (chei stabile pentru frontend). Nu impunem relații încă.
-model IngredientCatalog {
+model Flag {
   id        Int      @id @default(autoincrement())
-  key       String   @unique // ex: "mozzarella"
+  key       String   @unique
   label     String?
   createdAt DateTime @default(now())
-
+  products  ProductFlag[]
   @@index([key])
 }
 
-model FlagCatalog {
+model ProductFlag {
+  productId Int
+  flagId    Int
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  flag      Flag    @relation(fields: [flagId], references: [id], onDelete: Cascade)
+  @@id([productId, flagId])
+  @@index([flagId])
+}
+
+model Ingredient {
   id        Int      @id @default(autoincrement())
-  key       String   @unique // ex: "vegan"
+  key       String   @unique
   label     String?
   createdAt DateTime @default(now())
-
+  products  ProductIngredient[]
   @@index([key])
 }
 
-model VariantOptionCatalog {
+model ProductIngredient {
+  productId   Int
+  ingredientId Int
+  product     Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  ingredient  Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  @@id([productId, ingredientId])
+  @@index([ingredientId])
+}
+
+model DoughType {
   id        Int      @id @default(autoincrement())
-  key       String   @unique // ex: "large", "thin"
+  key       String   @unique
   label     String?
   createdAt DateTime @default(now())
-
+  variants  ProductVariant[]
   @@index([key])
+}
+
+model SizeOption {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  label     String?
+  createdAt DateTime @default(now())
+  variants  ProductVariant[]
+  @@index([key])
+}
+
+model ProductVariant {
+  id        Int        @id @default(autoincrement())
+  productId Int
+  price     Decimal    @db.Decimal(10, 2)
+  stock     Int        @default(0)
+  isDefault Boolean    @default(false)
+  doughId   Int?
+  sizeId    Int?
+  sku       String?    @unique
+
+  product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  dough     DoughType? @relation(fields: [doughId], references: [id])
+  size      SizeOption? @relation(fields: [sizeId], references: [id])
+
+  @@index([productId])
+  @@index([price])
+  @@index([doughId])
+  @@index([sizeId])
 }

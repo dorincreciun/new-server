@@ -260,50 +260,20 @@ router.post('/', (req, res) => productController.createProduct(req, res));
  * @swagger
  * /products:
  *   get:
- *     summary: Listează și filtrează produse (când lipsesc parametrii, întoarce toate)
+ *     summary: Obține toate produsele (endpoint simplu)
  *     tags: [Products]
- *     description: Identic cu /products/filter. Folosește parametrii de filtrare documentați la /products/filter.
+ *     description: Returnează toate produsele fără filtrare avansată. Pentru filtrare complexă, folosește /browse/products.
  *     responses:
  *       200:
- *         description: Lista filtrată paginată
- */
-router.get('/', (req, res) => productController.filterProducts(req, res));
-
-/**
- * @swagger
- * /products/search:
- *   get:
- *     summary: Caută produse după nume
- *     tags: [Products]
- *     parameters:
- *       - in: query
- *         name: name
- *         required: true
- *         schema:
- *           type: string
- *         description: Numele produsului de căutat
- *         example: "carne"
- *     responses:
- *       200:
- *         description: Rezultatele căutării
+ *         description: Lista cu toate produsele
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ProductListResponse'
- *       400:
- *         description: Parametrul de căutare lipsă
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       500:
- *         description: Eroare internă a serverului
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get('/search', (req, res) => productController.searchProducts(req, res));
+router.get('/', (req, res) => productController.getAllProducts(req, res));
+
+// Eliminat: /products/search - folosește /browse/products cu parametrul search
 
 /**
  * @swagger
@@ -360,7 +330,6 @@ router.get('/search', (req, res) => productController.searchProducts(req, res));
  *       500:
  *         description: Eroare internă
  */
-router.get('/facets/:slug', (req, res) => productController.getFacetsByCategorySlug(req, res));
 
 /**
  * @swagger
@@ -388,7 +357,7 @@ router.get('/facets/:slug', (req, res) => productController.getFacetsByCategoryS
  *             type: string
  *         style: form
  *         explode: true
- *         description: Chei flag (ex: vegan). Poate apărea de mai multe ori (flags=vegan&flags=spicy)
+ *         description: "Chei flag (ex: vegan). Poate apărea de mai multe ori (flags=vegan&flags=spicy)"
  *       - in: query
  *         name: flagsMode
  *         schema:
@@ -418,7 +387,7 @@ router.get('/facets/:slug', (req, res) => productController.getFacetsByCategoryS
  *             type: string
  *         style: form
  *         explode: true
- *         description: Valori de variantă (ex: large, thin); se caută în toate cheile de variantă
+ *         description: "Valori de variantă (ex: large, thin); se caută în toate cheile de variantă"
  *       - in: query
  *         name: variantsMode
  *         schema:
@@ -479,66 +448,10 @@ router.get('/facets/:slug', (req, res) => productController.getFacetsByCategoryS
  *       500:
  *         description: Eroare internă
  */
-router.get('/filter', (req, res) => productController.filterProducts(req, res));
 
-/**
- * @swagger
- * /products/low-stock:
- *   get:
- *     summary: Obține produsele cu stoc scăzut
- *     tags: [Products]
- *     parameters:
- *       - in: query
- *         name: threshold
- *         required: false
- *         schema:
- *           type: integer
- *           default: 10
- *         description: Pragul pentru stoc scăzut
- *         example: 5
- *     responses:
- *       200:
- *         description: Produsele cu stoc scăzut
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/LowStockResponse'
- *       400:
- *         description: Prag invalid
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       500:
- *         description: Eroare internă a serverului
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- */
-router.get('/low-stock', (req, res) => productController.getProductsWithLowStock(req, res));
+// Eliminat: /products/low-stock - funcționalitate administrativă, nu pentru frontend
 
-/**
- * @swagger
- * /products/stats:
- *   get:
- *     summary: Obține statistici despre produse
- *     tags: [Products]
- *     responses:
- *       200:
- *         description: Statisticile produselor
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ProductStatsResponse'
- *       500:
- *         description: Eroare internă a serverului
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- */
-router.get('/stats', (req, res) => productController.getProductStats(req, res));
+// Eliminat: /products/stats - funcționalitate administrativă, nu pentru frontend
 
 /**
  * @swagger
@@ -627,7 +540,6 @@ router.get('/stats', (req, res) => productController.getProductStats(req, res));
  *                 value:
  *                   error: "Eroare internă a serverului"
  */
-router.get('/category/:categoryId', (req, res) => productController.getProductsByCategory(req, res));
 
 /**
  * @swagger
@@ -702,7 +614,6 @@ router.get('/category/:categoryId', (req, res) => productController.getProductsB
  *                 value:
  *                   error: "Eroare internă a serverului"
  */
-router.get('/category-name/:categoryName', (req, res) => productController.getProductsByCategoryName(req, res));
 
 /**
  * @swagger
@@ -740,7 +651,6 @@ router.get('/category-name/:categoryName', (req, res) => productController.getPr
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get('/category-slug/:slug', (req, res) => productController.getProductsByCategorySlug(req, res));
 
 /**
  * @swagger
@@ -759,13 +669,6 @@ router.get('/category-slug/:slug', (req, res) => productController.getProductsBy
  *       200:
  *         description: Lista filtrată paginată
  */
-router.get('/../categories/:slug/products', (req, res) => {
-  // Forward către filter cu categorySlug
-  // Notă: înregistrarea reală se face în router-ul de produse, path public e /api/categories/:slug/products
-  const q: any = { ...req.query, categorySlug: req.params.slug };
-  (req as any).query = q;
-  return productController.filterProducts(req, res);
-});
 
 /**
  * @swagger

@@ -1,0 +1,861 @@
+# -- START openapi.clean.yaml --
+openapi: 3.0.3
+info:
+  title: eCommerce API (Browse + Taxonomies)
+  version: 1.1.0
+  description: >
+    API pentru autentificare JWT, navigare produse cu filtre (browse) și management de taxonomii.
+    Rutele redundante au fost eliminate. `/browse/filters` fără `categorySlug` întoarce **filtre globale**.
+servers:
+  - url: http://localhost:3000
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    UserDTO:
+      type: object
+      required: [id, email]
+      properties:
+        id: { type: integer, example: 1 }
+        email: { type: string, format: email, example: user@example.com }
+        name: { type: string, example: Ion Popescu }
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/UserDTO'
+    LogoutResponse:
+      type: object
+      properties:
+        message: { type: string, example: Logged out }
+    AuthRegisterRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 6 }
+        name: { type: string }
+      example:
+        email: user@example.com
+        password: secret123
+        name: Ion
+    AuthLoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string }
+      example:
+        email: user@example.com
+        password: secret123
+    ErrorResponse:
+      type: object
+      properties:
+        error: { type: string, example: Eroare de validare }
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field: { type: string }
+              message: { type: string }
+    Category:
+      type: object
+      required: [name]
+      properties:
+        id: { type: integer, example: 1 }
+        slug: { type: string, example: pizza }
+        name: { type: string, example: Pizza }
+        description: { type: string, example: Produse tip pizza }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    # Taxonomies
+    Ingredient:
+      type: object
+      required: [key]
+      properties:
+        key: { type: string, example: mozzarella }
+        label: { type: string, example: Mozzarella }
+    Flag:
+      type: object
+      required: [key]
+      properties:
+        key: { type: string, example: vegetarian }
+        label: { type: string, example: Vegetarian }
+    DoughType:
+      type: object
+      required: [key]
+      properties:
+        key: { type: string, example: thin }
+        label: { type: string, example: Subțire }
+    SizeOption:
+      type: object
+      required: [key]
+      properties:
+        key: { type: string, example: 30cm }
+        label: { type: string, example: 30cm }
+    # Product core (prod-ready, sincronizat cu variante)
+    Product:
+      type: object
+      required: [name, basePrice, categoryId]
+      properties:
+        id: { type: integer, example: 1 }
+        name: { type: string, example: Чизбургер-пицца }
+        description: { type: string, example: Pizza cu carne și castraveți marinați }
+        basePrice: { type: number, format: double, example: 399 }
+        minPrice: { type: number, format: double, example: 399 }
+        maxPrice: { type: number, format: double, example: 499 }
+        imageUrl: { type: string, example: https://cdn.example.com/pizzas/cheeseburger.jpg }
+        popularity: { type: integer, example: 128 }
+        ratingAverage: { type: number, format: double, example: 4.7 }
+        ratingCount: { type: integer, example: 352 }
+        isCustomizable: { type: boolean, example: true }
+        releasedAt: { type: string, format: date-time }
+        categoryId: { type: integer, example: 3 }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        category:
+          type: object
+          properties:
+            id: { type: integer, example: 3 }
+            name: { type: string, example: Пиццы }
+            slug: { type: string, example: pizza }
+    ProductWithRelations:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Product'
+        - type: object
+          properties:
+            flags:
+              type: array
+              items: { $ref: '#/components/schemas/Flag' }
+            ingredients:
+              type: array
+              items: { $ref: '#/components/schemas/Ingredient' }
+            variants:
+              type: array
+              items:
+                type: object
+                properties:
+                  id: { type: integer, example: 101 }
+                  price: { type: number, format: double, example: 399 }
+                  isDefault: { type: boolean, example: true }
+                  doughType: { $ref: '#/components/schemas/DoughType' }
+                  sizeOption: { $ref: '#/components/schemas/SizeOption' }
+    ProductResponse:
+      type: object
+      properties:
+        message: { type: string, example: Produsul a fost creat cu succes }
+        data: { $ref: '#/components/schemas/ProductWithRelations' }
+    ProductListResponse:
+      type: object
+      properties:
+        message: { type: string, example: Produsele au fost obținute cu succes }
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/ProductWithRelations' }
+        count: { type: integer, example: 2 }
+    BrowseResponse:
+      type: object
+      properties:
+        message: { type: string }
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/ProductWithRelations' }
+        pagination:
+          type: object
+          properties:
+            page: { type: integer, example: 1 }
+            limit: { type: integer, example: 12 }
+            total: { type: integer, example: 65 }
+            totalPages: { type: integer, example: 6 }
+paths:
+  /auth/register:
+    post:
+      summary: Register a new user
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AuthRegisterRequest' }
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '400':
+          description: Invalid input or account already exists
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /auth/login:
+    post:
+      summary: Login user
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AuthLoginRequest' }
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '400':
+          description: Missing credentials / invalid email
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /auth/refresh:
+    post:
+      summary: Refresh access token
+      tags: [Auth]
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '401':
+          description: Missing, invalid or expired refresh token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /auth/me:
+    get:
+      summary: Returnează utilizatorul autentificat
+      tags: [Auth]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /auth/logout:
+    post:
+      summary: Logout user
+      tags: [Auth]
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LogoutResponse' }
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /browse/products:
+    get:
+      summary: Filtrează și sortează produsele
+      description: Endpoint principal pentru filtrarea produselor (price sortează după minPrice)
+      tags: [Browse]
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+          description: Căutare în nume și descriere
+        - in: query
+          name: categorySlug
+          schema: { type: string }
+          description: Slug-ul categoriei
+          example: pizza
+        - in: query
+          name: priceMin
+          schema: { type: number }
+          description: Preț minim (pe minPrice)
+        - in: query
+          name: priceMax
+          schema: { type: number }
+          description: Preț maxim (pe minPrice)
+        - in: query
+          name: flags
+          schema: { type: string }
+          description: CSV sau flags[]=a&flags[]=b
+          example: spicy,vegetarian
+        - in: query
+          name: ingredients
+          schema: { type: string }
+          description: CSV sau ingredients[]=a&ingredients[]=b
+          example: mozzarella,tomato
+        - in: query
+          name: dough
+          schema: { type: string }
+          description: Tip aluat (cheie)
+          example: thin
+        - in: query
+          name: size
+          schema: { type: string }
+          description: Mărime (cheie)
+          example: 30cm
+        - in: query
+          name: isCustomizable
+          schema: { type: boolean }
+          description: Doar produse personalizabile
+        - in: query
+          name: isNew
+          schema: { type: boolean }
+          description: releasedAt în ultimele `newerThanDays` zile (implicit 30)
+        - in: query
+          name: newerThanDays
+          schema: { type: integer, default: 30 }
+        - in: query
+          name: sort
+          schema:
+            type: string
+            enum: [price, rating, popularity, newest]
+            default: newest
+        - in: query
+          name: order
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200':
+          description: Lista filtrată de produse
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BrowseResponse' }
+        '422':
+          description: Parametri invalizi
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '500':
+          description: Eroare internă a serverului
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /browse/filters:
+    get:
+      summary: Obține opțiunile de filtrare disponibile
+      description: >
+        Fără `categorySlug` → **filtre globale**; cu `categorySlug` → **filtre contextuale** (ținând cont de ceilalți parametri).
+        Counts sunt calculate în contextul filtrării curente.
+      tags: [Browse]
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: categorySlug
+          schema: { type: string }
+          example: pizza
+        - in: query
+          name: priceMin
+          schema: { type: number }
+        - in: query
+          name: priceMax
+          schema: { type: number }
+        - in: query
+          name: flags
+          schema: { type: string }
+          description: CSV sau flags[]=a&flags[]=b
+        - in: query
+          name: ingredients
+          schema: { type: string }
+          description: CSV sau ingredients[]=a&ingredients[]=b
+        - in: query
+          name: dough
+          schema: { type: string }
+        - in: query
+          name: size
+          schema: { type: string }
+        - in: query
+          name: isCustomizable
+          schema: { type: boolean }
+        - in: query
+          name: isNew
+          schema: { type: boolean }
+        - in: query
+          name: newerThanDays
+          schema: { type: integer, default: 30 }
+      responses:
+        '200':
+          description: Opțiunile de filtrare
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                  data:
+                    type: object
+                    properties:
+                      flags:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            key: { type: string }
+                            label: { type: string }
+                            count: { type: integer }
+                      ingredients:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            key: { type: string }
+                            label: { type: string }
+                            count: { type: integer }
+                      doughTypes:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            key: { type: string }
+                            label: { type: string }
+                            count: { type: integer }
+                      sizeOptions:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            key: { type: string }
+                            label: { type: string }
+                            count: { type: integer }
+                      price:
+                        type: object
+                        properties:
+                          min: { type: number }
+                          max: { type: number }
+  /categories:
+    post:
+      summary: Creează o nouă categorie
+      tags: [Categories]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateCategoryRequest' }
+      responses:
+        '201':
+          description: Categoria a fost creată cu succes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                  data: { $ref: '#/components/schemas/Category' }
+        '400': { description: Date invalide, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '409': { description: Duplicat, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '500': { description: Eroare internă, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+    get:
+      summary: Obține toate categoriile
+      tags: [Categories]
+      responses:
+        '200':
+          description: Lista categoriilor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/Category' }
+        '500':
+          description: Eroare internă
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /categories/{slug}:
+    get:
+      summary: Obține o categorie după slug
+      tags: [Categories]
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Categoria găsită
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Category' }
+        '400': { description: Slug invalid }
+        '404': { description: Categoria nu a fost găsită }
+  /categories/{id}:
+    get:
+      summary: Obține o categorie după ID
+      tags: [Categories]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Categoria a fost găsită
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Category' }
+        '400': { description: ID invalid, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '404': { description: Categoria nu a fost găsită, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '500': { description: Eroare internă, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+    put:
+      summary: Actualizează o categorie
+      tags: [Categories]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateCategoryRequest' }
+      responses:
+        '200':
+          description: Categoria a fost actualizată
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Category' }
+        '400': { description: Date invalide, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '404': { description: Categoria nu a fost găsită, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '409': { description: Duplicat, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '500': { description: Eroare internă, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+    delete:
+      summary: Șterge o categorie
+      tags: [Categories]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Categoria a fost ștearsă
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: Categoria a fost ștearsă cu succes }
+        '400': { description: ID invalid, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '404': { description: Categoria nu a fost găsită, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '500': { description: Eroare internă, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+  /products:
+    post:
+      summary: Creează un nou produs
+      tags: [Products]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Product' }
+      responses:
+        '201':
+          description: Produsul a fost creat
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductResponse' }
+        '400': { description: Date invalide, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '404': { description: Categoria nu există, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '500': { description: Eroare internă, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+    get:
+      summary: Obține toate produsele (endpoint simplu)
+      tags: [Products]
+      responses:
+        '200':
+          description: Lista cu toate produsele
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductListResponse' }
+        '500':
+          description: Eroare internă
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /products/{id}:
+    get:
+      summary: Obține un produs după ID
+      tags: [Products]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Produsul a fost găsit
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductResponse' }
+        '400': { description: ID invalid, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '404': { description: Produsul nu a fost găsit, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '500': { description: Eroare internă, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+    put:
+      summary: Actualizează un produs
+      tags: [Products]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Product' }
+      responses:
+        '200':
+          description: Produsul a fost actualizat
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductResponse' }
+        '400': { description: Date invalide, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '404': { description: Produsul nu a fost găsit, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '500': { description: Eroare internă, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+    delete:
+      summary: Șterge un produs
+      tags: [Products]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Produsul a fost șters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: Produsul a fost șters cu succes }
+        '400': { description: ID invalid, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '404': { description: Produsul nu a fost găsit, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '500': { description: Eroare internă, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+  /products/{id}/stock:
+    put:
+      summary: Actualizează stocul unui produs
+      tags: [Products]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [stock]
+              properties:
+                stock: { type: integer, example: 200 }
+      responses:
+        '200':
+          description: Stocul actualizat
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductResponse' }
+        '400': { description: Date invalide, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '404': { description: Produsul nu a fost găsit, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '500': { description: Eroare internă, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+  /taxonomies/ingredients:
+    get:
+      summary: Listează ingredientele
+      tags: [Taxonomies]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/Ingredient' }
+    post:
+      summary: Creează un ingredient
+      tags: [Taxonomies]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [key]
+              properties:
+                key: { type: string, example: mozzarella }
+                label: { type: string, example: Mozzarella }
+      responses:
+        '201':
+          description: Creat
+  /taxonomies/flags:
+    get:
+      summary: Listează flagurile
+      tags: [Taxonomies]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/Flag' }
+    post:
+      summary: Creează un flag
+      tags: [Taxonomies]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [key]
+              properties:
+                key: { type: string, example: vegetarian }
+                label: { type: string, example: Vegetarian }
+      responses:
+        '201':
+          description: Creat
+  /taxonomies/variants/dough-types:
+    get:
+      summary: Listează tipurile de aluat
+      tags: [Taxonomies]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/DoughType' }
+    post:
+      summary: Creează un tip de aluat
+      tags: [Taxonomies]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [key]
+              properties:
+                key: { type: string, example: thin }
+                label: { type: string, example: Subțire }
+      responses:
+        '201':
+          description: Creat
+  /taxonomies/variants/size-options:
+    get:
+      summary: Listează mărimile
+      tags: [Taxonomies]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/SizeOption' }
+    post:
+      summary: Creează o mărime
+      tags: [Taxonomies]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [key]
+              properties:
+                key: { type: string, example: 30cm }
+                label: { type: string, example: 30cm }
+      responses:
+        '201':
+          description: Creat
+tags:
+  - name: Auth
+    description: Operațiuni de autentificare și gestionare utilizatori cu cookie-uri HTTP-Only
+  - name: Browse
+    description: Filtrare și căutare avansată de produse
+  - name: Categories
+    description: Gestionarea categoriilor de produse
+  - name: Products
+    description: Gestionarea produselor (CRUD simplu)
+  - name: Taxonomies
+    description: Cataloge pentru ingrediente, flaguri și opțiuni de variante
+
+# -- END openapi.clean.yaml --

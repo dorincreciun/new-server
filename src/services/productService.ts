@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 export interface CreateProductData {
   name: string;
   description?: string;
-  price: number;
+  basePrice: number;
   stock?: number;
   categoryId: number;
 }
@@ -13,7 +13,7 @@ export interface CreateProductData {
 export interface UpdateProductData {
   name?: string;
   description?: string;
-  price?: number;
+  basePrice?: number;
   stock?: number;
   categoryId?: number;
 }
@@ -227,46 +227,109 @@ export class ProductService {
     ingredients: { value: string; count: number }[];
     variants: Record<string, { value: string; count: number }[]>;
   }> {
-    const products = await prisma.product.findMany({
-      where: { category: { slug } },
-      select: { flags: true, ingredients: true, variants: true },
+    // Obține toate flagurile pentru produsele din categorie
+    const flags = await prisma.flag.findMany({
+      where: {
+        products: {
+          some: {
+            product: {
+              category: { slug }
+            }
+          }
+        }
+      },
+      include: {
+        _count: {
+          select: { products: true }
+        }
+      }
+    });
+
+    // Obține toate ingredientele pentru produsele din categorie
+    const ingredients = await prisma.ingredient.findMany({
+      where: {
+        products: {
+          some: {
+            product: {
+              category: { slug }
+            }
+          }
+        }
+      },
+      include: {
+        _count: {
+          select: { products: true }
+        }
+      }
+    });
+
+    // Obține toate tipurile de aluat pentru produsele din categorie
+    const doughTypes = await prisma.doughType.findMany({
+      where: {
+        variants: {
+          some: {
+            product: {
+              category: { slug }
+            }
+          }
+        }
+      },
+      include: {
+        _count: {
+          select: { variants: true }
+        }
+      }
+    });
+
+    // Obține toate opțiunile de mărime pentru produsele din categorie
+    const sizeOptions = await prisma.sizeOption.findMany({
+      where: {
+        variants: {
+          some: {
+            product: {
+              category: { slug }
+            }
+          }
+        }
+      },
+      include: {
+        _count: {
+          select: { variants: true }
+        }
+      }
     });
 
     const flagCounts: Record<string, number> = {};
     const ingredientCounts: Record<string, number> = {};
     const variantCounts: Record<string, Record<string, number>> = {};
 
-    for (const p of products) {
-      const pFlags = (p.flags as unknown as string[]) || [];
-      for (const f of pFlags) {
-        const key = String(f).trim();
-        if (!key) continue;
-        flagCounts[key] = (flagCounts[key] || 0) + 1;
-      }
-
-      const pIngr = (p.ingredients as unknown as string[]) || [];
-      for (const ing of pIngr) {
-        const key = String(ing).trim();
-        if (!key) continue;
-        ingredientCounts[key] = (ingredientCounts[key] || 0) + 1;
-      }
-
-      const pVariants = (p.variants as unknown as Record<string, string[]>) || {};
-      for (const [variantKey, options] of Object.entries(pVariants)) {
-        if (!variantCounts[variantKey]) variantCounts[variantKey] = {};
-        for (const opt of options) {
-          const key = String(opt).trim();
-          if (!key) continue;
-          variantCounts[variantKey][key] = (variantCounts[variantKey][key] || 0) + 1;
-        }
-      }
+    // Procesează flagurile
+    for (const flag of flags) {
+      flagCounts[flag.key] = flag._count.products;
     }
 
-    const flags = Object.entries(flagCounts)
+    // Procesează ingredientele
+    for (const ingredient of ingredients) {
+      ingredientCounts[ingredient.key] = ingredient._count.products;
+    }
+
+    // Procesează tipurile de aluat
+    for (const doughType of doughTypes) {
+      if (!variantCounts['doughType']) variantCounts['doughType'] = {};
+      variantCounts['doughType'][doughType.key] = doughType._count.variants;
+    }
+
+    // Procesează opțiunile de mărime
+    for (const sizeOption of sizeOptions) {
+      if (!variantCounts['sizeOption']) variantCounts['sizeOption'] = {};
+      variantCounts['sizeOption'][sizeOption.key] = sizeOption._count.variants;
+    }
+
+    const flagsResult = Object.entries(flagCounts)
       .map(([value, count]) => ({ value, count }))
       .sort((a, b) => a.value.localeCompare(b.value));
 
-    const ingredients = Object.entries(ingredientCounts)
+    const ingredientsResult = Object.entries(ingredientCounts)
       .map(([value, count]) => ({ value, count }))
       .sort((a, b) => a.value.localeCompare(b.value));
 
@@ -277,7 +340,7 @@ export class ProductService {
         .sort((a, b) => a.value.localeCompare(b.value));
     }
 
-    return { flags, ingredients, variants };
+    return { flags: flagsResult, ingredients: ingredientsResult, variants };
   }
 
   /**
@@ -289,16 +352,16 @@ export class ProductService {
    * - priceMin/priceMax: pe câmpurile minPrice/maxPrice
    */
   async filterProductsPaginated(opts: {
-    categorySlug?: string;
-    search?: string;
-    flags?: string[];
+    categorySlug?: string | undefined;
+    search?: string | undefined;
+    flags?: string[] | undefined;
     flagsMode?: 'all' | 'any';
-    ingredients?: string[];
+    ingredients?: string[] | undefined;
     ingredientsMode?: 'all' | 'any';
-    variants?: string[]; // caută în orice cheie de variantă
+    variants?: string[] | undefined; // caută în orice cheie de variantă
     variantsMode?: 'all' | 'any';
-    priceMin?: number;
-    priceMax?: number;
+    priceMin?: number | undefined;
+    priceMax?: number | undefined;
     page?: number;
     pageSize?: number;
     sortBy?: 'price' | 'createdAt' | 'popularity';
@@ -335,9 +398,18 @@ export class ProductService {
       const cleaned = flags.map((s) => String(s).trim()).filter(Boolean);
       if (cleaned.length > 0) {
         if (flagsMode === 'all') {
-          andFilters.push({ flags: { contains: cleaned } });
+          // AND logic: fiecare cheie trebuie să existe ca flag
+          for (const key of cleaned) {
+            andFilters.push({ flags: { some: { flag: { key } } } });
+          }
         } else {
-          andFilters.push({ OR: cleaned.map((v) => ({ flags: { contains: [v] } })) });
+          andFilters.push({
+            flags: {
+              some: {
+                flag: { key: { in: cleaned } }
+              }
+            }
+          });
         }
       }
     }
@@ -346,9 +418,18 @@ export class ProductService {
       const cleaned = ingredients.map((s) => String(s).trim()).filter(Boolean);
       if (cleaned.length > 0) {
         if (ingredientsMode === 'all') {
-          andFilters.push({ ingredients: { contains: cleaned } });
+          // AND logic: fiecare ingredient din listă trebuie să existe
+          for (const key of cleaned) {
+            andFilters.push({ ingredients: { some: { ingredient: { key } } } });
+          }
         } else {
-          andFilters.push({ OR: cleaned.map((v) => ({ ingredients: { contains: [v] } })) });
+          andFilters.push({
+            ingredients: {
+              some: {
+                ingredient: { key: { in: cleaned } }
+              }
+            }
+          });
         }
       }
     }
@@ -369,26 +450,48 @@ export class ProductService {
     if (!variants || variants.length === 0) {
       const items = await prisma.product.findMany({
         where,
-        include: { category: true },
-        orderBy: { [sortBy]: order },
+        include: { 
+          category: true,
+          flags: {
+            include: { flag: true }
+          },
+          ingredients: {
+            include: { ingredient: true }
+          },
+          variants: {
+            include: { 
+              dough: true,
+              size: true
+            }
+          }
+        },
+        orderBy: { [(sortBy === 'price' ? 'basePrice' : sortBy)]: order },
         skip: (page - 1) * pageSize,
         take: pageSize,
       });
       return { items: items as ProductWithCategory[], total: totalPreVariants, page, pageSize };
     }
 
-    // Pentru variants: calculăm ID-urile care corespund în memorie (dintr-un fetch redus)
+    // Pentru variants: calculăm ID-urile care corespund folosind relațiile many-to-many
     const candidates = await prisma.product.findMany({
       where,
-      select: { id: true, variants: true },
+      select: { 
+        id: true,
+        variants: {
+          include: {
+            dough: true,
+            size: true
+          }
+        }
+      },
     });
     const variantWanted = variants.map((s) => String(s).trim()).filter(Boolean);
     const matches = new Set<number>();
     for (const c of candidates) {
-      const vmap = (c.variants as unknown as Record<string, string[]>) || {};
       const haveSet = new Set<string>();
-      for (const arr of Object.values(vmap)) {
-        for (const val of arr || []) haveSet.add(String(val));
+      for (const variant of c.variants) {
+        if (variant.dough) haveSet.add(variant.dough.key);
+        if (variant.size) haveSet.add(variant.size.key);
       }
       if (variantWanted.length === 0) {
         matches.add(c.id);
@@ -406,8 +509,22 @@ export class ProductService {
     }
     const items = await prisma.product.findMany({
       where: { id: { in: pageIds } },
-      include: { category: true },
-      orderBy: { [sortBy]: order },
+      include: { 
+        category: true,
+        flags: {
+          include: { flag: true }
+        },
+        ingredients: {
+          include: { ingredient: true }
+        },
+        variants: {
+          include: { 
+            dough: true,
+            size: true
+          }
+        }
+      },
+      orderBy: { [(sortBy === 'price' ? 'basePrice' : sortBy)]: order },
     });
     return { items: items as ProductWithCategory[], total, page, pageSize };
   }

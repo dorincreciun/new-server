@@ -9,7 +9,7 @@ export class ProductController {
    */
   async createProduct(req: Request, res: Response): Promise<void> {
     try {
-      const { name, description, price, stock, categoryId } = req.body;
+      const { name, description, basePrice, stock, categoryId } = req.body;
 
       // Validare input
       if (!name || typeof name !== 'string' || name.trim().length === 0) {
@@ -19,9 +19,9 @@ export class ProductController {
         return;
       }
 
-      if (typeof price !== 'number' || price < 0) {
+      if (typeof basePrice !== 'number' || basePrice < 0) {
         res.status(400).json({
-          error: 'Prețul trebuie să fie un număr pozitiv',
+          error: 'Prețul de bază trebuie să fie un număr pozitiv',
         });
         return;
       }
@@ -45,7 +45,7 @@ export class ProductController {
       const productData: CreateProductData = {
         name: name.trim(),
         description: description?.trim() || undefined,
-        price,
+        basePrice,
         stock: stock || 0,
         categoryId,
       };
@@ -129,16 +129,16 @@ export class ProductController {
       }
 
       const result = await productService.filterProductsPaginated({
-        categorySlug: categorySlug?.trim(),
-        search: search?.trim(),
-        flags,
+        categorySlug: categorySlug?.trim() || undefined,
+        search: search?.trim() || undefined,
+        flags: flags || undefined,
         flagsMode,
-        ingredients,
+        ingredients: ingredients || undefined,
         ingredientsMode,
-        variants,
+        variants: variants || undefined,
         variantsMode,
-        priceMin,
-        priceMax,
+        priceMin: priceMin || undefined,
+        priceMax: priceMax || undefined,
         page,
         pageSize,
         sortBy,
@@ -365,7 +365,7 @@ export class ProductController {
   async updateProduct(req: Request, res: Response): Promise<void> {
     try {
       const id = parseInt(req.params.id || '0');
-      const { name, description, price, stock, categoryId } = req.body;
+      const { name, description, basePrice, stock, categoryId } = req.body;
 
       if (isNaN(id) || id <= 0) {
         res.status(400).json({
@@ -407,14 +407,14 @@ export class ProductController {
       if (description !== undefined) {
         updateData.description = description?.trim() || undefined;
       }
-      if (price !== undefined) {
-        if (typeof price !== 'number' || price < 0) {
+      if (basePrice !== undefined) {
+        if (typeof basePrice !== 'number' || basePrice < 0) {
           res.status(400).json({
-            error: 'Prețul trebuie să fie un număr pozitiv',
+            error: 'Prețul de bază trebuie să fie un număr pozitiv',
           });
           return;
         }
-        updateData.price = price;
+        updateData.basePrice = basePrice;
       }
       if (stock !== undefined) {
         if (typeof stock !== 'number' || stock < 0) {

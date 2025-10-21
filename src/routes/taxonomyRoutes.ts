@@ -47,19 +47,35 @@ router.delete('/flags/:id', (req, res) => controller.deleteFlag(req, res));
 
 /**
  * @swagger
- * /taxonomies/variants:
+ * /taxonomies/dough-types:
  *   get:
- *     summary: Listează opțiunile de variante
+ *     summary: Listează tipurile de aluat
  *     tags: [Taxonomies]
  *   post:
- *     summary: Creează o opțiune de variantă
+ *     summary: Creează un tip de aluat
  *     tags: [Taxonomies]
  */
-// Variant Options
-router.get('/variants', (req, res) => controller.listVariantOptions(req, res));
-router.post('/variants', (req, res) => controller.createVariantOption(req, res));
-router.put('/variants/:id', (req, res) => controller.updateVariantOption(req, res));
-router.delete('/variants/:id', (req, res) => controller.deleteVariantOption(req, res));
+// Dough Types
+router.get('/dough-types', (req, res) => controller.listDoughTypes(req, res));
+router.post('/dough-types', (req, res) => controller.createDoughType(req, res));
+router.put('/dough-types/:id', (req, res) => controller.updateDoughType(req, res));
+router.delete('/dough-types/:id', (req, res) => controller.deleteDoughType(req, res));
+
+/**
+ * @swagger
+ * /taxonomies/size-options:
+ *   get:
+ *     summary: Listează opțiunile de mărime
+ *     tags: [Taxonomies]
+ *   post:
+ *     summary: Creează o opțiune de mărime
+ *     tags: [Taxonomies]
+ */
+// Size Options
+router.get('/size-options', (req, res) => controller.listSizeOptions(req, res));
+router.post('/size-options', (req, res) => controller.createSizeOption(req, res));
+router.put('/size-options/:id', (req, res) => controller.updateSizeOption(req, res));
+router.delete('/size-options/:id', (req, res) => controller.deleteSizeOption(req, res));
 
 export { router as taxonomyRoutes };
 

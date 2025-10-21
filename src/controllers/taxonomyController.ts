@@ -72,29 +72,54 @@ export class TaxonomyController {
     catch (e: any) { if (e?.code === 'P2025') { res.status(404).json({ error: 'Flag inexistent' }); return; } throw e; }
   }
 
-  // Variant options
-  async listVariantOptions(_req: Request, res: Response) {
-    const data = await service.listVariantOptions();
+  // Dough types
+  async listDoughTypes(_req: Request, res: Response) {
+    const data = await service.listDoughTypes();
     res.json({ items: data });
   }
-  async createVariantOption(req: Request, res: Response) {
+  async createDoughType(req: Request, res: Response) {
     const { key, label } = req.body || {};
-    if (!key || typeof key !== 'string' || !key.trim()) { res.status(400).json({ error: 'Cheia variantei este obligatorie' }); return; }
-    try { const item = await service.createVariantOption(key.trim(), label); res.status(201).json({ item }); }
-    catch (e: any) { if (e?.code === 'P2002') { res.status(409).json({ error: 'Cheie variantă duplicată' }); return; } throw e; }
+    if (!key || typeof key !== 'string' || !key.trim()) { res.status(400).json({ error: 'Cheia tipului de aluat este obligatorie' }); return; }
+    try { const item = await service.createDoughType(key.trim(), label); res.status(201).json({ item }); }
+    catch (e: any) { if (e?.code === 'P2002') { res.status(409).json({ error: 'Cheie tip aluat duplicată' }); return; } throw e; }
   }
-  async updateVariantOption(req: Request, res: Response) {
+  async updateDoughType(req: Request, res: Response) {
     const id = Number(req.params.id);
     const { key, label } = req.body || {};
     if (Number.isNaN(id) || id <= 0) { res.status(400).json({ error: 'ID invalid' }); return; }
-    try { const item = await service.updateVariantOption(id, key, label); res.json({ item }); }
-    catch (e: any) { if (e?.code === 'P2002') { res.status(409).json({ error: 'Cheie duplicată' }); return; } if (e?.code === 'P2025') { res.status(404).json({ error: 'Variantă inexistentă' }); return; } throw e; }
+    try { const item = await service.updateDoughType(id, key, label); res.json({ item }); }
+    catch (e: any) { if (e?.code === 'P2002') { res.status(409).json({ error: 'Cheie duplicată' }); return; } if (e?.code === 'P2025') { res.status(404).json({ error: 'Tip aluat inexistent' }); return; } throw e; }
   }
-  async deleteVariantOption(req: Request, res: Response) {
+  async deleteDoughType(req: Request, res: Response) {
     const id = Number(req.params.id);
     if (Number.isNaN(id) || id <= 0) { res.status(400).json({ error: 'ID invalid' }); return; }
-    try { await service.deleteVariantOption(id); res.json({ message: 'Șters' }); }
-    catch (e: any) { if (e?.code === 'P2025') { res.status(404).json({ error: 'Variantă inexistentă' }); return; } throw e; }
+    try { await service.deleteDoughType(id); res.json({ message: 'Șters' }); }
+    catch (e: any) { if (e?.code === 'P2025') { res.status(404).json({ error: 'Tip aluat inexistent' }); return; } throw e; }
+  }
+
+  // Size options
+  async listSizeOptions(_req: Request, res: Response) {
+    const data = await service.listSizeOptions();
+    res.json({ items: data });
+  }
+  async createSizeOption(req: Request, res: Response) {
+    const { key, label } = req.body || {};
+    if (!key || typeof key !== 'string' || !key.trim()) { res.status(400).json({ error: 'Cheia opțiunii de mărime este obligatorie' }); return; }
+    try { const item = await service.createSizeOption(key.trim(), label); res.status(201).json({ item }); }
+    catch (e: any) { if (e?.code === 'P2002') { res.status(409).json({ error: 'Cheie opțiune mărime duplicată' }); return; } throw e; }
+  }
+  async updateSizeOption(req: Request, res: Response) {
+    const id = Number(req.params.id);
+    const { key, label } = req.body || {};
+    if (Number.isNaN(id) || id <= 0) { res.status(400).json({ error: 'ID invalid' }); return; }
+    try { const item = await service.updateSizeOption(id, key, label); res.json({ item }); }
+    catch (e: any) { if (e?.code === 'P2002') { res.status(409).json({ error: 'Cheie duplicată' }); return; } if (e?.code === 'P2025') { res.status(404).json({ error: 'Opțiune mărime inexistentă' }); return; } throw e; }
+  }
+  async deleteSizeOption(req: Request, res: Response) {
+    const id = Number(req.params.id);
+    if (Number.isNaN(id) || id <= 0) { res.status(400).json({ error: 'ID invalid' }); return; }
+    try { await service.deleteSizeOption(id); res.json({ message: 'Șters' }); }
+    catch (e: any) { if (e?.code === 'P2025') { res.status(404).json({ error: 'Opțiune mărime inexistentă' }); return; } throw e; }
   }
 }
 

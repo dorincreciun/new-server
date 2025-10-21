@@ -254,27 +254,7 @@ router.get('/', (req, res) => categoryController.getAllCategories(req, res));
 router.get('/:slug', (req, res) => categoryController.getCategoryBySlug(req, res));
 
 
-/**
- * @swagger
- * /categories/stats:
- *   get:
- *     summary: Obține statistici despre categorii
- *     tags: [Categories]
- *     responses:
- *       200:
- *         description: Statisticile categoriilor
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/CategoryStatsResponse'
- *       500:
- *         description: Eroare internă a serverului
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- */
-router.get('/stats', (req, res) => categoryController.getCategoryStats(req, res));
+// Eliminat: /categories/stats - funcționalitate administrativă, nu pentru frontend
 
 /**
  * @swagger

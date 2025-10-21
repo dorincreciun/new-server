@@ -3,46 +3,72 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export class TaxonomyService {
-  // IngredientCatalog
+  // Ingredient
   async listIngredients() {
-    return prisma.ingredientCatalog.findMany({ orderBy: { key: 'asc' } });
+    return prisma.ingredient.findMany({ orderBy: { key: 'asc' } });
   }
   async createIngredient(key: string, label?: string) {
-    return prisma.ingredientCatalog.create({ data: { key, label } });
+    return prisma.ingredient.create({ data: { key, label: label || null } });
   }
   async updateIngredient(id: number, key?: string, label?: string) {
-    return prisma.ingredientCatalog.update({ where: { id }, data: { key, label } });
+    const data: any = {};
+    if (key !== undefined) data.key = key;
+    if (label !== undefined) data.label = label || null;
+    return prisma.ingredient.update({ where: { id }, data });
   }
   async deleteIngredient(id: number) {
-    await prisma.ingredientCatalog.delete({ where: { id } });
+    await prisma.ingredient.delete({ where: { id } });
   }
 
-  // FlagCatalog
+  // Flag
   async listFlags() {
-    return prisma.flagCatalog.findMany({ orderBy: { key: 'asc' } });
+    return prisma.flag.findMany({ orderBy: { key: 'asc' } });
   }
   async createFlag(key: string, label?: string) {
-    return prisma.flagCatalog.create({ data: { key, label } });
+    return prisma.flag.create({ data: { key, label: label || null } });
   }
   async updateFlag(id: number, key?: string, label?: string) {
-    return prisma.flagCatalog.update({ where: { id }, data: { key, label } });
+    const data: any = {};
+    if (key !== undefined) data.key = key;
+    if (label !== undefined) data.label = label || null;
+    return prisma.flag.update({ where: { id }, data });
   }
   async deleteFlag(id: number) {
-    await prisma.flagCatalog.delete({ where: { id } });
+    await prisma.flag.delete({ where: { id } });
   }
 
-  // VariantOptionCatalog
-  async listVariantOptions() {
-    return prisma.variantOptionCatalog.findMany({ orderBy: { key: 'asc' } });
+  // DoughType
+  async listDoughTypes() {
+    return prisma.doughType.findMany({ orderBy: { key: 'asc' } });
   }
-  async createVariantOption(key: string, label?: string) {
-    return prisma.variantOptionCatalog.create({ data: { key, label } });
+  async createDoughType(key: string, label?: string) {
+    return prisma.doughType.create({ data: { key, label: label || null } });
   }
-  async updateVariantOption(id: number, key?: string, label?: string) {
-    return prisma.variantOptionCatalog.update({ where: { id }, data: { key, label } });
+  async updateDoughType(id: number, key?: string, label?: string) {
+    const data: any = {};
+    if (key !== undefined) data.key = key;
+    if (label !== undefined) data.label = label || null;
+    return prisma.doughType.update({ where: { id }, data });
   }
-  async deleteVariantOption(id: number) {
-    await prisma.variantOptionCatalog.delete({ where: { id } });
+  async deleteDoughType(id: number) {
+    await prisma.doughType.delete({ where: { id } });
+  }
+
+  // SizeOption
+  async listSizeOptions() {
+    return prisma.sizeOption.findMany({ orderBy: { key: 'asc' } });
+  }
+  async createSizeOption(key: string, label?: string) {
+    return prisma.sizeOption.create({ data: { key, label: label || null } });
+  }
+  async updateSizeOption(id: number, key?: string, label?: string) {
+    const data: any = {};
+    if (key !== undefined) data.key = key;
+    if (label !== undefined) data.label = label || null;
+    return prisma.sizeOption.update({ where: { id }, data });
+  }
+  async deleteSizeOption(id: number) {
+    await prisma.sizeOption.delete({ where: { id } });
   }
 }
 

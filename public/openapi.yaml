@@ -109,6 +109,110 @@ components:
           summary: Eroare server
           value:
             message: Eroare internă a serverului
+    ProductWithRelations:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        minPrice:
+          type: number
+        maxPrice:
+          type: number
+        imageUrl:
+          type: string
+        popularity:
+          type: integer
+        isCustomizable:
+          type: boolean
+        releasedAt:
+          type: string
+          format: date-time
+        ratingAverage:
+          type: number
+        ratingCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        category:
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            slug:
+              type: string
+        flags:
+          type: array
+          items:
+            type: object
+            properties:
+              key:
+                type: string
+              label:
+                type: string
+        ingredients:
+          type: array
+          items:
+            type: object
+            properties:
+              key:
+                type: string
+              label:
+                type: string
+        variants:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              price:
+                type: number
+              isDefault:
+                type: boolean
+              doughType:
+                type: object
+                properties:
+                  key:
+                    type: string
+                  label:
+                    type: string
+              sizeOption:
+                type: object
+                properties:
+                  key:
+                    type: string
+                  label:
+                    type: string
+    BrowseResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductWithRelations'
+        pagination:
+          type: object
+          properties:
+            page:
+              type: integer
+            limit:
+              type: integer
+            total:
+              type: integer
     Category:
       type: object
       required:
@@ -582,6 +686,298 @@ paths:
               examples:
                 ServerError:
                   $ref: '#/components/schemas/Error/examples/ServerError'
+  /browse/products:
+    get:
+      summary: Filtrează și sortează produsele
+      description: Endpoint principal pentru filtrarea produselor cu suport pentru toate tipurile de filtre
+      tags:
+        - Browse
+      parameters:
+        - in: query
+          name: q
+          schema:
+            type: string
+          description: Căutare full-text în nume și descriere
+          example: cheese
+        - in: query
+          name: categorySlug
+          schema:
+            type: string
+          description: Slug-ul categoriei
+          example: pizza
+        - in: query
+          name: priceMin
+          schema:
+            type: number
+          description: Prețul minim
+          example: 200
+        - in: query
+          name: priceMax
+          schema:
+            type: number
+          description: Prețul maxim
+          example: 500
+        - in: query
+          name: flags
+          schema:
+            type: string
+          description: Flaguri separate prin virgulă
+          example: spicy,vegetarian
+        - in: query
+          name: ingredients
+          schema:
+            type: string
+          description: Ingrediente separate prin virgulă
+          example: mozzarella,tomato
+        - in: query
+          name: dough
+          schema:
+            type: string
+          description: Tipul de aluat
+          example: thin
+        - in: query
+          name: size
+          schema:
+            type: string
+          description: Mărimea
+          example: 30cm
+        - in: query
+          name: isCustomizable
+          schema:
+            type: boolean
+          description: Filtrează produsele care pot fi personalizate
+        - in: query
+          name: isNew
+          schema:
+            type: boolean
+          description: Filtrează produsele noi (releasedAt în ultimele newerThanDays zile)
+        - in: query
+          name: newerThanDays
+          schema:
+            type: integer
+            default: 30
+          description: Numărul de zile pentru care produsul este considerat nou
+        - in: query
+          name: sort
+          schema:
+            type: string
+            enum:
+              - price
+              - rating
+              - popularity
+              - newest
+            default: newest
+          description: Criteriul de sortare (price sortează după minPrice)
+        - in: query
+          name: order
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
+          description: Ordinea de sortare
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Numărul paginii
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Numărul de produse per pagină
+      responses:
+        '200':
+          description: Lista filtrată de produse
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrowseResponse'
+              examples:
+                Success:
+                  summary: Produse filtrate cu succes
+                  value:
+                    message: Produsele au fost filtrate cu succes
+                    data:
+                      - id: 1
+                        name: Чизбургер-пицца
+                        price: 399
+                        minPrice: 399
+                        maxPrice: 499
+                        flags:
+                          - key: spicy
+                            label: Picant
+                        ingredients:
+                          - key: mozzarella
+                            label: Mozzarella
+                          - key: tomato
+                            label: Roșii
+                        variants:
+                          - id: 1
+                            price: 399
+                            isDefault: true
+                            sizeOption:
+                              key: 30cm
+                              label: 30cm
+                        category:
+                          id: 1
+                          slug: pizza
+                          name: Пиццы
+                    pagination:
+                      page: 1
+                      limit: 10
+                      total: 65
+        '422':
+          description: Parametri invalizi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        field:
+                          type: string
+                        message:
+                          type: string
+        '500':
+          description: Eroare internă a serverului
+  /browse/filters:
+    get:
+      summary: Obține opțiunile de filtrare disponibile
+      description: Returnează toate opțiunile de filtrare cu numărul de produse pentru fiecare. Fără categorySlug → filtre globale; cu categorySlug → filtre contextuale (ținând cont de ceilalți parametri)
+      tags:
+        - Browse
+      parameters:
+        - in: query
+          name: q
+          schema:
+            type: string
+          description: Căutare full-text în nume și descriere
+        - in: query
+          name: categorySlug
+          schema:
+            type: string
+          description: Slug-ul categoriei pentru filtrare specifică
+          example: pizza
+        - in: query
+          name: priceMin
+          schema:
+            type: number
+          description: Prețul minim (filtrare pe minPrice)
+        - in: query
+          name: priceMax
+          schema:
+            type: number
+          description: Prețul maxim (filtrare pe minPrice)
+        - in: query
+          name: flags
+          schema:
+            type: string
+          description: Flaguri CSV sau flags[]=a&flags[]=b
+        - in: query
+          name: ingredients
+          schema:
+            type: string
+          description: Ingrediente CSV sau ingredients[]=a&ingredients[]=b
+        - in: query
+          name: dough
+          schema:
+            type: string
+          description: Tip aluat
+        - in: query
+          name: size
+          schema:
+            type: string
+          description: Mărime
+        - in: query
+          name: isCustomizable
+          schema:
+            type: boolean
+        - in: query
+          name: isNew
+          schema:
+            type: boolean
+        - in: query
+          name: newerThanDays
+          schema:
+            type: integer
+            default: 30
+      responses:
+        '200':
+          description: Opțiunile de filtrare
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      flags:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            key:
+                              type: string
+                            label:
+                              type: string
+                            count:
+                              type: integer
+                      ingredients:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            key:
+                              type: string
+                            label:
+                              type: string
+                            count:
+                              type: integer
+                      doughTypes:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            key:
+                              type: string
+                            label:
+                              type: string
+                            count:
+                              type: integer
+                      sizeOptions:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            key:
+                              type: string
+                            label:
+                              type: string
+                            count:
+                              type: integer
+                      price:
+                        type: object
+                        properties:
+                          min:
+                            type: number
+                          max:
+                            type: number
   /categories:
     post:
       summary: Creează o nouă categorie
@@ -667,29 +1063,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CategoryListResponse'
-              examples:
-                Success:
-                  summary: Lista categoriilor
-                  value:
-                    message: Categoriile au fost obținute cu succes
-                    data:
-                      - id: 1
-                        name: Branza
-                        description: Brânze de diferite tipuri
-                        createdAt: '2024-01-15T10:08:15.917Z'
-                        updatedAt: '2024-01-15T10:08:15.917Z'
-                      - id: 2
-                        name: Carne
-                        description: Produse din carne de porc, vită, pui
-                        createdAt: '2024-01-15T10:08:11.243Z'
-                        updatedAt: '2024-01-15T10:08:11.243Z'
-                      - id: 3
-                        name: Lactate
-                        description: Produse lactate
-                        createdAt: '2024-01-15T10:08:19.906Z'
-                        updatedAt: '2024-01-15T10:08:19.906Z'
-                    count: 3
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Category'
         '500':
           description: Eroare internă a serverului
           content:
@@ -701,24 +1080,32 @@ paths:
                   summary: Eroare server
                   value:
                     error: Eroare internă a serverului
-  /categories/stats:
+  /categories/{slug}:
     get:
-      summary: Obține statistici despre categorii
+      summary: Obține o categorie după slug
       tags:
         - Categories
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+          description: Slug-ul categoriei ("toate" nu este permis)
       responses:
         '200':
-          description: Statisticile categoriilor
+          description: Categoria găsită
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CategoryStatsResponse'
-        '500':
-          description: Eroare internă a serverului
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Category'
+        '400':
+          description: Slug invalid
+        '404':
+          description: Categoria nu a fost găsită
   /categories/{id}:
     get:
       summary: Obține o categorie după ID
@@ -884,7 +1271,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
     get:
-      summary: Obține toate produsele
+      summary: Obține toate produsele (endpoint simplu)
       tags:
         - Products
       responses:
@@ -900,89 +1287,196 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /products/search:
+      description: Returnează toate produsele fără filtrare avansată. Pentru filtrare complexă, folosește /browse/products.
+  /products/facets/{slug}:
     get:
-      summary: Caută produse după nume
+      summary: Obține listele de filtre (facets) pentru o categorie după slug
+      description: Returnează valorile disponibile pentru filtre (flags, ingredients, variants) în categoria dată. Valorile sunt deduse din produsele existente.
       tags:
         - Products
       parameters:
-        - in: query
-          name: name
+        - in: path
+          name: slug
           required: true
           schema:
             type: string
-          description: Numele produsului de căutat
-          example: carne
+          description: Slug-ul categoriei
       responses:
         '200':
-          description: Rezultatele căutării
+          description: Facets pentru categorie
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProductListResponse'
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      flags:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            value:
+                              type: string
+                            count:
+                              type: integer
+                      ingredients:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            value:
+                              type: string
+                            count:
+                              type: integer
+                      variants:
+                        type: object
+                        additionalProperties:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              value:
+                                type: string
+                              count:
+                                type: integer
         '400':
-          description: Parametrul de căutare lipsă
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          description: Slug invalid
         '500':
-          description: Eroare internă a serverului
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  /products/low-stock:
+          description: Eroare internă
+  /products/filter:
     get:
-      summary: Obține produsele cu stoc scăzut
+      summary: Filtrează produse după categorie, flags, ingrediente, variante și preț
+      description: Toți parametrii sunt opționali. Dacă `categorySlug` lipsește sau este gol, se returnează toate produsele. `flagsMode`/`ingredientsMode`/`variantsMode` controlează logica (all/any).
       tags:
         - Products
       parameters:
         - in: query
-          name: threshold
-          required: false
+          name: categorySlug
+          schema:
+            type: string
+          description: Slug-ul categoriei; dacă lipsește/gol → toate produsele
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Caută în nume
+        - in: query
+          name: flags
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
+          description: 'Chei flag (ex: vegan). Poate apărea de mai multe ori (flags=vegan&flags=spicy)'
+        - in: query
+          name: flagsMode
+          schema:
+            type: string
+            enum:
+              - all
+              - any
+            default: any
+        - in: query
+          name: ingredients
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
+          description: Chei ingrediente; implicit mode=all
+        - in: query
+          name: ingredientsMode
+          schema:
+            type: string
+            enum:
+              - all
+              - any
+            default: all
+        - in: query
+          name: variants
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
+          description: 'Valori de variantă (ex: large, thin); se caută în toate cheile de variantă'
+        - in: query
+          name: variantsMode
+          schema:
+            type: string
+            enum:
+              - all
+              - any
+            default: any
+        - in: query
+          name: priceMin
+          schema:
+            type: number
+        - in: query
+          name: priceMax
+          schema:
+            type: number
+        - in: query
+          name: page
           schema:
             type: integer
-            default: 10
-          description: Pragul pentru stoc scăzut
-          example: 5
+            minimum: 1
+            default: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+            enum:
+              - price
+              - createdAt
+              - popularity
+            default: createdAt
+        - in: query
+          name: order
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
       responses:
         '200':
-          description: Produsele cu stoc scăzut
+          description: Lista filtrată paginată
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LowStockResponse'
+                type: object
+                properties:
+                  message:
+                    type: string
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Product'
+                  page:
+                    type: integer
+                  pageSize:
+                    type: integer
+                  total:
+                    type: integer
         '400':
-          description: Prag invalid
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          description: Parametri invalizi
         '500':
-          description: Eroare internă a serverului
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  /products/stats:
-    get:
-      summary: Obține statistici despre produse
-      tags:
-        - Products
-      responses:
-        '200':
-          description: Statisticile produselor
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProductStatsResponse'
-        '500':
-          description: Eroare internă a serverului
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          description: Eroare internă
   /products/category/{categoryId}:
     get:
       summary: Obține produsele dintr-o anumită categorie
@@ -1173,6 +1667,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /categories/{slug}/products:
+    get:
+      summary: Listează produsele dintr-o categorie după slug (cu aceleași filtre ca /products)
+      description: Alias pentru /products cu categorySlug derivat din path. Acceptă aceiași parametri de filtrare și paginare.
+      tags:
+        - Products
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista filtrată paginată
   /products/{id}:
     get:
       summary: Obține un produs după ID
@@ -1339,10 +1848,41 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /taxonomies/ingredients:
+    get:
+      summary: Listează ingredientele
+      tags:
+        - Taxonomies
+    post:
+      summary: Creează un ingredient
+      tags:
+        - Taxonomies
+  /taxonomies/flags:
+    get:
+      summary: Listează flagurile
+      tags:
+        - Taxonomies
+    post:
+      summary: Creează un flag
+      tags:
+        - Taxonomies
+  /taxonomies/variants:
+    get:
+      summary: Listează opțiunile de variante
+      tags:
+        - Taxonomies
+    post:
+      summary: Creează o opțiune de variantă
+      tags:
+        - Taxonomies
 tags:
   - name: Auth
     description: Operațiuni de autentificare și gestionare utilizatori cu cookie-uri HTTP-Only
+  - name: Browse
+    description: Filtrare și căutare avansată de produse
   - name: Categories
     description: Gestionarea categoriilor de produse
   - name: Products
     description: Gestionarea produselor și căutarea după categorii
+  - name: Taxonomies
+    description: Cataloge pentru ingrediente, flaguri și opțiuni de variante (fără permisiuni temporar)
