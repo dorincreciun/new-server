@@ -295,76 +295,8 @@ router.post('/login', async (req: Request, res: Response) => {
   }
 });
 
-/**
- * @swagger
- * /auth/refresh:
- *   post:
- *     summary: Refresh access token
- *     tags: [Auth]
- *     responses:
- *       200:
- *         description: Token refreshed successfully
- *         headers:
- *           Set-Cookie:
- *             $ref: '#/components/headers/SetCookieHeader'
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/AuthResponse'
- *             examples:
- *               Success:
- *                 value:
- *                   user:
- *                     id: 1
- *                     email: user@example.com
- *                     name: Ion
- *       401:
- *         description: Missing, invalid or expired refresh token
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *             examples:
- *               Unauthorized:
- *                 $ref: '#/components/schemas/Error/examples/Unauthorized'
- *       500:
- *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *             examples:
- *               ServerError:
- *                 $ref: '#/components/schemas/Error/examples/ServerError'
- */
-router.post('/refresh', async (req: Request, res: Response) => {
-  try {
-    const refreshToken = readRefreshToken(req);
-
-    if (!refreshToken) {
-      // Șterge cookie-urile pentru siguranță
-      clearAuthCookies(res);
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-
-    const userAgent = req.get('User-Agent');
-    const ipAddress = req.ip || req.connection.remoteAddress;
-
-    const result = await authService.rotateRefreshToken(refreshToken, userAgent, ipAddress);
-    
-    // Setează cookie-urile noi
-    setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken);
-
-    res.json({
-      user: result.user
-    });
-  } catch (error: any) {
-    // Șterge cookie-urile pentru siguranță
-    clearAuthCookies(res);
-    console.error('Refresh error:', error);
-    res.status(401).json({ message: 'Unauthorized' });
-  }
-});
+// ELIMINAT: POST /auth/refresh - funcționalitate complexă, nu necesară pentru frontend simplu
+// ELIMINAT: POST /auth/refresh - funcționalitate complexă, nu necesară pentru frontend simplu
 
 
 /**
@@ -406,20 +338,7 @@ router.post('/refresh', async (req: Request, res: Response) => {
  *               ServerError:
  *                 $ref: '#/components/schemas/Error/examples/ServerError'
  */
-router.get('/me', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    if (!req.user) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-
-    res.json({
-      user: req.user
-    });
-  } catch (error) {
-    console.error('Me error:', error);
-    res.status(500).json({ message: 'Internal server error' });
-  }
-});
+// ELIMINAT: GET /auth/me - funcționalitate complexă, nu necesară pentru frontend simplu
 
 /**
  * @swagger

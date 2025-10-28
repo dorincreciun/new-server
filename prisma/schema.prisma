@@ -1,3 +1,6 @@
+// Pizza Shop Database Schema
+// Schema pentru magazinul de pizza cu produse, categorii, ingrediente și variante
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -31,6 +34,7 @@ model RefreshToken {
   @@index([userId])
 }
 
+// Categorii de pizza (ex: Pizza Clasice, Pizza Vegetariene, Pizza Picante)
 model Category {
   id          Int        @id @default(autoincrement())
   slug        String     @unique
@@ -43,28 +47,30 @@ model Category {
   @@index([slug])
 }
 
+// Produse pizza cu ingrediente, flaguri și variante (mărimi, tipuri de aluat)
 model Product {
   id             Int           @id @default(autoincrement())
-  name           String
-  description    String?
-  basePrice      Decimal       @db.Decimal(10, 2)
-  minPrice       Decimal?      @db.Decimal(10, 2)
-  maxPrice       Decimal?      @db.Decimal(10, 2)
-  imageUrl       String?
-  popularity     Int           @default(0)
-  ratingAverage  Decimal?      @db.Decimal(3, 2)
-  ratingCount    Int           @default(0)
-  isCustomizable Boolean       @default(false)
-  releasedAt     DateTime?
-  stock          Int           @default(0)
-  categoryId     Int
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  name         String        // ex: "Pizza Margherita"
+  description  String?       // ex: "Pizza clasică italiană cu sos de roșii, mozzarella și busuioc"
+  basePrice    Decimal       @db.Decimal(10, 2)  // Prețul de bază
+  minPrice     Decimal?      @db.Decimal(10, 2)  // Prețul minim (pentru mărimea mică)
+  maxPrice     Decimal?      @db.Decimal(10, 2)  // Prețul maxim (pentru mărimea mare)
+  imageUrl     String?       // URL imagine pizza
+  popularity   Int           @default(0)         // Popularitate (numărul de comenzi)
+  ratingAverage Decimal?     @db.Decimal(3, 2)   // Rating mediu (1-5)
+  ratingCount  Int           @default(0)         // Numărul de evaluări
+  isCustomizable Boolean     @default(false)     // Poate fi personalizată
+  releasedAt   DateTime?     // Data lansării
+  stock        Int           @default(0)         // Stoc disponibil
+  categoryId   Int           // Categoria de pizza
+  
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 
-  category       Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  flags          ProductFlag[]
-  ingredients    ProductIngredient[]
-  variants       ProductVariant[]
+  category     Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  flags        ProductFlag[]      // Flaguri (vegetarian, picant, premium, etc.)
+  ingredients  ProductIngredient[] // Ingrediente (mozzarella, salam, ciuperci, etc.)
+  variants     ProductVariant[]    // Variante (mărimi și tipuri de aluat)
 
   @@index([categoryId])
   @@index([name])
@@ -75,10 +81,11 @@ model Product {
   @@index([basePrice])
 }
 
+// Flaguri pentru filtrare (ex: vegetarian, picant, premium, popular)
 model Flag {
   id        Int      @id @default(autoincrement())
-  key       String   @unique
-  label     String?
+  key       String   @unique  // ex: "vegetarian", "picant", "premium"
+  label     String?           // ex: "Vegetarian", "Picant", "Premium"
   createdAt DateTime @default(now())
   products  ProductFlag[]
   @@index([key])
@@ -93,10 +100,11 @@ model ProductFlag {
   @@index([flagId])
 }
 
+// Ingrediente pentru pizza (ex: mozzarella, salam, ciuperci, măsline)
 model Ingredient {
   id        Int      @id @default(autoincrement())
-  key       String   @unique
-  label     String?
+  key       String   @unique  // ex: "mozzarella", "salam", "ciuperci"
+  label     String?           // ex: "Mozzarella", "Salam", "Ciuperci"
   createdAt DateTime @default(now())
   products  ProductIngredient[]
   @@index([key])
@@ -111,33 +119,36 @@ model ProductIngredient {
   @@index([ingredientId])
 }
 
+// Tipuri de aluat pentru pizza (ex: clasic, subțire, gros, integral)
 model DoughType {
   id        Int      @id @default(autoincrement())
-  key       String   @unique
-  label     String?
+  key       String   @unique  // ex: "clasic", "subtire", "gros"
+  label     String?           // ex: "Aluat Clasic", "Aluat Subțire", "Aluat Gros"
   createdAt DateTime @default(now())
   variants  ProductVariant[]
   @@index([key])
 }
 
+// Mărimi pentru pizza (ex: mică, medie, mare, familie)
 model SizeOption {
   id        Int      @id @default(autoincrement())
-  key       String   @unique
-  label     String?
+  key       String   @unique  // ex: "mica", "medie", "mare", "familie"
+  label     String?           // ex: "Mică (25cm)", "Medie (30cm)", "Mare (35cm)"
   createdAt DateTime @default(now())
   variants  ProductVariant[]
   @@index([key])
 }
 
+// Variante de produse (combinații de mărime și tip de aluat cu prețuri diferite)
 model ProductVariant {
   id        Int        @id @default(autoincrement())
-  productId Int
-  price     Decimal    @db.Decimal(10, 2)
-  stock     Int        @default(0)
-  isDefault Boolean    @default(false)
-  doughId   Int?
-  sizeId    Int?
-  sku       String?    @unique
+  productId Int        // Pizza de bază
+  price     Decimal    @db.Decimal(10, 2)  // Prețul pentru această variantă
+  stock     Int        @default(0)         // Stoc disponibil
+  isDefault Boolean    @default(false)     // Varianta implicită
+  doughId   Int?       // Tipul de aluat (opțional)
+  sizeId    Int?       // Mărimea (opțional)
+  sku       String?    @unique             // Cod unic produs
 
   product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
   dough     DoughType? @relation(fields: [doughId], references: [id])

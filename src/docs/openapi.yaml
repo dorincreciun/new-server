@@ -1,11 +1,12 @@
 # -- START openapi.clean.yaml --
 openapi: 3.0.3
 info:
-  title: eCommerce API (Browse + Taxonomies)
-  version: 1.1.0
+  title: Pizza Shop API
+  version: 2.0.0
   description: >
-    API pentru autentificare JWT, navigare produse cu filtre (browse) și management de taxonomii.
-    Rutele redundante au fost eliminate. `/browse/filters` fără `categorySlug` întoarce **filtre globale**.
+    API pentru magazinul de pizza - autentificare JWT, navigare produse cu filtre (browse) și taxonomii.
+    Include categorii de pizza, produse cu ingrediente și variante, filtrare avansată și taxonomii pentru client.
+    Toate endpoint-urile administrative au fost eliminate - doar funcționalități pentru client.
 servers:
   - url: http://localhost:3000
 components:
@@ -67,9 +68,9 @@ components:
       required: [name]
       properties:
         id: { type: integer, example: 1 }
-        slug: { type: string, example: pizza }
-        name: { type: string, example: Pizza }
-        description: { type: string, example: Produse tip pizza }
+        slug: { type: string, example: pizza-clasice }
+        name: { type: string, example: Pizza Clasice }
+        description: { type: string, example: Pizza tradiționale cu rețete clasice italiene }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
     # Taxonomies
@@ -89,40 +90,40 @@ components:
       type: object
       required: [key]
       properties:
-        key: { type: string, example: thin }
-        label: { type: string, example: Subțire }
+        key: { type: string, example: clasic }
+        label: { type: string, example: Aluat Clasic }
     SizeOption:
       type: object
       required: [key]
       properties:
-        key: { type: string, example: 30cm }
-        label: { type: string, example: 30cm }
+        key: { type: string, example: medie }
+        label: { type: string, example: Medie (30cm) }
     # Product core (prod-ready, sincronizat cu variante)
     Product:
       type: object
       required: [name, basePrice, categoryId]
       properties:
         id: { type: integer, example: 1 }
-        name: { type: string, example: Чизбургер-пицца }
-        description: { type: string, example: Pizza cu carne și castraveți marinați }
-        basePrice: { type: number, format: double, example: 399 }
-        minPrice: { type: number, format: double, example: 399 }
-        maxPrice: { type: number, format: double, example: 499 }
-        imageUrl: { type: string, example: https://cdn.example.com/pizzas/cheeseburger.jpg }
-        popularity: { type: integer, example: 128 }
-        ratingAverage: { type: number, format: double, example: 4.7 }
-        ratingCount: { type: integer, example: 352 }
+        name: { type: string, example: Pizza Margherita }
+        description: { type: string, example: Pizza clasică italiană cu sos de roșii, mozzarella și busuioc proaspăt }
+        basePrice: { type: number, format: double, example: 25.00 }
+        minPrice: { type: number, format: double, example: 20.00 }
+        maxPrice: { type: number, format: double, example: 35.00 }
+        imageUrl: { type: string, example: https://cdn.example.com/pizzas/margherita.jpg }
+        popularity: { type: integer, example: 95 }
+        ratingAverage: { type: number, format: double, example: 4.8 }
+        ratingCount: { type: integer, example: 150 }
         isCustomizable: { type: boolean, example: true }
         releasedAt: { type: string, format: date-time }
-        categoryId: { type: integer, example: 3 }
+        categoryId: { type: integer, example: 1 }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
         category:
           type: object
           properties:
-            id: { type: integer, example: 3 }
-            name: { type: string, example: Пиццы }
-            slug: { type: string, example: pizza }
+            id: { type: integer, example: 1 }
+            name: { type: string, example: Pizza Clasice }
+            slug: { type: string, example: pizza-clasice }
     ProductWithRelations:
       type: object
       allOf:
@@ -297,7 +298,7 @@ paths:
           name: categorySlug
           schema: { type: string }
           description: Slug-ul categoriei
-          example: pizza
+          example: pizza-clasice
         - in: query
           name: priceMin
           schema: { type: number }
@@ -320,12 +321,12 @@ paths:
           name: dough
           schema: { type: string }
           description: Tip aluat (cheie)
-          example: thin
+          example: clasic
         - in: query
           name: size
           schema: { type: string }
           description: Mărime (cheie)
-          example: 30cm
+          example: medie
         - in: query
           name: isCustomizable
           schema: { type: boolean }
@@ -385,7 +386,7 @@ paths:
         - in: query
           name: categorySlug
           schema: { type: string }
-          example: pizza
+          example: pizza-clasice
         - in: query
           name: priceMin
           schema: { type: number }

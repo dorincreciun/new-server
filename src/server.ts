@@ -17,9 +17,13 @@ export async function ensureSchemaCompatibility(): Promise<void> {
   const prisma = new PrismaClient();
   try {
     // Determină baza de date curentă
-    const [{ db }]: Array<{ db: string }> = await prisma.$queryRawUnsafe(
+    const result = await prisma.$queryRawUnsafe(
       'SELECT DATABASE() AS db'
-    );
+    ) as Array<{ db: string }>;
+    const db = result[0]?.db;
+    if (!db) {
+      throw new Error('Could not determine database name');
+    }
 
     // Helper pentru a verifica existența unei coloane
     async function columnExists(table: string, column: string): Promise<boolean> {
