@@ -36,7 +36,7 @@ export const BrowseQuerySchema = z.object({
   sort: z.enum(['price', 'rating', 'popularity', 'newest']).default('newest'),
   order: z.enum(['asc', 'desc']).default('desc'),
   page: z.coerce.number().min(1).default(1),
-  limit: z.coerce.number().min(1).max(100).default(20),
+  limit: z.coerce.number().int().min(1).max(100).default(12),
 }).refine((data) => {
   if (data.priceMin !== undefined && data.priceMax !== undefined) {
     return data.priceMin <= data.priceMax;

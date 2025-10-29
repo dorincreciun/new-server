@@ -21,17 +21,18 @@ export class BrowseController {
         return;
       }
 
-      const query = queryResult.data;
+      const DEFAULT_LIMIT = 20;
+      const query = { ...queryResult.data, limit: DEFAULT_LIMIT } as any;
       const { products, total } = await browseService.getProducts(query);
 
-      const totalPages = Math.ceil(total / query.limit);
+      const totalPages = Math.ceil(total / DEFAULT_LIMIT);
 
       const response: BrowseResponse = {
         message: 'Produsele au fost filtrate cu succes',
         data: products,
         pagination: {
           page: query.page,
-          limit: query.limit,
+          limit: DEFAULT_LIMIT,
           total,
           totalPages
         }

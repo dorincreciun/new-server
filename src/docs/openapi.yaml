@@ -101,7 +101,7 @@ components:
     # Product core (prod-ready, sincronizat cu variante)
     Product:
       type: object
-      required: [name, basePrice, categoryId]
+      required: [name, basePrice]
       properties:
         id: { type: integer, example: 1 }
         name: { type: string, example: Pizza Margherita }
@@ -115,7 +115,6 @@ components:
         ratingCount: { type: integer, example: 150 }
         isCustomizable: { type: boolean, example: true }
         releasedAt: { type: string, format: date-time }
-        categoryId: { type: integer, example: 1 }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
         category:
@@ -174,6 +173,71 @@ components:
             total: { type: integer, example: 65 }
             totalPages: { type: integer, example: 6 }
 paths:
+  /cart:
+    get:
+      summary: Obține coșul curent al utilizatorului
+      tags: [Cart]
+      responses:
+        '200':
+          description: OK
+    delete:
+      summary: Golește coșul utilizatorului
+      tags: [Cart]
+      responses:
+        '204':
+          description: Fără conținut
+  /cart/items:
+    post:
+      summary: Adaugă o variantă de produs în coș (sau crește cantitatea)
+      tags: [Cart]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [productVariantId]
+              properties:
+                productVariantId: { type: integer }
+                quantity: { type: integer, default: 1 }
+      responses:
+        '201':
+          description: Creat
+        '400': { description: Date invalide }
+        '404': { description: Varianta nu a fost găsită }
+  /cart/items/{itemId}:
+    patch:
+      summary: Actualizează cantitatea unui item din coș
+      tags: [Cart]
+      parameters:
+        - in: path
+          name: itemId
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [quantity]
+              properties:
+                quantity: { type: integer }
+      responses:
+        '200': { description: OK }
+        '400': { description: Cantitate invalidă }
+        '404': { description: Item-ul nu a fost găsit }
+    delete:
+      summary: Elimină un item din coș
+      tags: [Cart]
+      parameters:
+        - in: path
+          name: itemId
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Fără conținut }
+        '404': { description: Item-ul nu a fost găsit }
   /auth/register:
     post:
       summary: Register a new user
@@ -353,9 +417,6 @@ paths:
         - in: query
           name: page
           schema: { type: integer, minimum: 1, default: 1 }
-        - in: query
-          name: limit
-          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
       responses:
         '200':
           description: Lista filtrată de produse
@@ -466,28 +527,6 @@ paths:
                           min: { type: number }
                           max: { type: number }
   /categories:
-    post:
-      summary: Creează o nouă categorie
-      tags: [Categories]
-      security: [{ bearerAuth: [] }]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/CreateCategoryRequest' }
-      responses:
-        '201':
-          description: Categoria a fost creată cu succes
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message: { type: string }
-                  data: { $ref: '#/components/schemas/Category' }
-        '400': { description: Date invalide, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
-        '409': { description: Duplicat, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
-        '500': { description: Eroare internă, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
     get:
       summary: Obține toate categoriile
       tags: [Categories]
@@ -527,94 +566,8 @@ paths:
                   data: { $ref: '#/components/schemas/Category' }
         '400': { description: Slug invalid }
         '404': { description: Categoria nu a fost găsită }
-  /categories/{id}:
-    get:
-      summary: Obține o categorie după ID
-      tags: [Categories]
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: integer }
-      responses:
-        '200':
-          description: Categoria a fost găsită
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data: { $ref: '#/components/schemas/Category' }
-        '400': { description: ID invalid, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
-        '404': { description: Categoria nu a fost găsită, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
-        '500': { description: Eroare internă, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
-    put:
-      summary: Actualizează o categorie
-      tags: [Categories]
-      security: [{ bearerAuth: [] }]
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: integer }
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/UpdateCategoryRequest' }
-      responses:
-        '200':
-          description: Categoria a fost actualizată
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data: { $ref: '#/components/schemas/Category' }
-        '400': { description: Date invalide, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
-        '404': { description: Categoria nu a fost găsită, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
-        '409': { description: Duplicat, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
-        '500': { description: Eroare internă, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
-    delete:
-      summary: Șterge o categorie
-      tags: [Categories]
-      security: [{ bearerAuth: [] }]
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: integer }
-      responses:
-        '200':
-          description: Categoria a fost ștearsă
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message: { type: string, example: Categoria a fost ștearsă cu succes }
-        '400': { description: ID invalid, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
-        '404': { description: Categoria nu a fost găsită, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
-        '500': { description: Eroare internă, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+  # Eliminat: toate operațiile administrative pe categorii (ID/PUT/DELETE)
   /products:
-    post:
-      summary: Creează un nou produs
-      tags: [Products]
-      security: [{ bearerAuth: [] }]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/Product' }
-      responses:
-        '201':
-          description: Produsul a fost creat
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ProductResponse' }
-        '400': { description: Date invalide, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
-        '404': { description: Categoria nu există, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
-        '500': { description: Eroare internă, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
     get:
       summary: Obține toate produsele (endpoint simplu)
       tags: [Products]
@@ -629,99 +582,33 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
-  /products/{id}:
+  /products/facets/{slug}:
     get:
-      summary: Obține un produs după ID
+      summary: Obține valorile posibile (facets) pentru filtrele unei categorii (după slug)
       tags: [Products]
       parameters:
         - in: path
-          name: id
+          name: slug
           required: true
-          schema: { type: integer }
+          schema: { type: string }
       responses:
         '200':
-          description: Produsul a fost găsit
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ProductResponse' }
-        '400': { description: ID invalid, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
-        '404': { description: Produsul nu a fost găsit, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
-        '500': { description: Eroare internă, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
-    put:
-      summary: Actualizează un produs
-      tags: [Products]
-      security: [{ bearerAuth: [] }]
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: integer }
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/Product' }
-      responses:
-        '200':
-          description: Produsul a fost actualizat
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ProductResponse' }
-        '400': { description: Date invalide, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
-        '404': { description: Produsul nu a fost găsit, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
-        '500': { description: Eroare internă, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
-    delete:
-      summary: Șterge un produs
-      tags: [Products]
-      security: [{ bearerAuth: [] }]
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: integer }
-      responses:
-        '200':
-          description: Produsul a fost șters
+          description: OK
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  message: { type: string, example: Produsul a fost șters cu succes }
-        '400': { description: ID invalid, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
-        '404': { description: Produsul nu a fost găsit, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
-        '500': { description: Eroare internă, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
-  /products/{id}/stock:
-    put:
-      summary: Actualizează stocul unui produs
-      tags: [Products]
-      security: [{ bearerAuth: [] }]
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: integer }
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [stock]
-              properties:
-                stock: { type: integer, example: 200 }
-      responses:
-        '200':
-          description: Stocul actualizat
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ProductResponse' }
-        '400': { description: Date invalide, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
-        '404': { description: Produsul nu a fost găsit, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
-        '500': { description: Eroare internă, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+                  message: { type: string }
+                  data:
+                    type: object
+        '400': { description: Slug invalid }
+        '500': { description: Eroare internă }
+  # Eliminat: /products/{id} – detaliu prin ID nu este expus
+  # Eliminat: operațiile administrative de produse (POST/PUT/DELETE/stock)
   /taxonomies/ingredients:
     get:
-      summary: Listează ingredientele
+      summary: Listează ingredientele disponibile
       tags: [Taxonomies]
       responses:
         '200':
@@ -731,29 +618,13 @@ paths:
               schema:
                 type: object
                 properties:
-                  items:
+                  message: { type: string }
+                  data:
                     type: array
                     items: { $ref: '#/components/schemas/Ingredient' }
-    post:
-      summary: Creează un ingredient
-      tags: [Taxonomies]
-      security: [{ bearerAuth: [] }]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [key]
-              properties:
-                key: { type: string, example: mozzarella }
-                label: { type: string, example: Mozzarella }
-      responses:
-        '201':
-          description: Creat
   /taxonomies/flags:
     get:
-      summary: Listează flagurile
+      summary: Listează flagurile disponibile
       tags: [Taxonomies]
       responses:
         '200':
@@ -763,29 +634,13 @@ paths:
               schema:
                 type: object
                 properties:
-                  items:
+                  message: { type: string }
+                  data:
                     type: array
                     items: { $ref: '#/components/schemas/Flag' }
-    post:
-      summary: Creează un flag
-      tags: [Taxonomies]
-      security: [{ bearerAuth: [] }]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [key]
-              properties:
-                key: { type: string, example: vegetarian }
-                label: { type: string, example: Vegetarian }
-      responses:
-        '201':
-          description: Creat
-  /taxonomies/variants/dough-types:
+  /taxonomies/dough-types:
     get:
-      summary: Listează tipurile de aluat
+      summary: Listează tipurile de aluat disponibile
       tags: [Taxonomies]
       responses:
         '200':
@@ -795,29 +650,13 @@ paths:
               schema:
                 type: object
                 properties:
-                  items:
+                  message: { type: string }
+                  data:
                     type: array
                     items: { $ref: '#/components/schemas/DoughType' }
-    post:
-      summary: Creează un tip de aluat
-      tags: [Taxonomies]
-      security: [{ bearerAuth: [] }]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [key]
-              properties:
-                key: { type: string, example: thin }
-                label: { type: string, example: Subțire }
-      responses:
-        '201':
-          description: Creat
-  /taxonomies/variants/size-options:
+  /taxonomies/size-options:
     get:
-      summary: Listează mărimile
+      summary: Listează opțiunile de mărime disponibile
       tags: [Taxonomies]
       responses:
         '200':
@@ -827,26 +666,10 @@ paths:
               schema:
                 type: object
                 properties:
-                  items:
+                  message: { type: string }
+                  data:
                     type: array
                     items: { $ref: '#/components/schemas/SizeOption' }
-    post:
-      summary: Creează o mărime
-      tags: [Taxonomies]
-      security: [{ bearerAuth: [] }]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [key]
-              properties:
-                key: { type: string, example: 30cm }
-                label: { type: string, example: 30cm }
-      responses:
-        '201':
-          description: Creat
 tags:
   - name: Auth
     description: Operațiuni de autentificare și gestionare utilizatori cu cookie-uri HTTP-Only
@@ -858,5 +681,7 @@ tags:
     description: Gestionarea produselor (CRUD simplu)
   - name: Taxonomies
     description: Cataloge pentru ingrediente, flaguri și opțiuni de variante
+  - name: Cart
+    description: Coș de cumpărături per utilizator autentificat
 
 # -- END openapi.clean.yaml --

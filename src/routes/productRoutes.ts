@@ -239,6 +239,39 @@ router.get('/', (req, res) => productController.getAllProducts(req, res));
 
 // ELIMINAT: GET /products/facets/:slug - funcționalitate complexă, nu necesară pentru frontend
 
+/**
+ * @swagger
+ * /products/facets/{slug}:
+ *   get:
+ *     summary: Obține valorile posibile (facets) pentru filtrele unei categorii (după slug)
+ *     tags: [Products]
+ *     description: Returnează colecțiile pentru filtre precum flags, ingredients, doughTypes, sizeOptions și intervalul de preț pentru categoria indicată prin slug.
+ *     parameters:
+ *       - in: path
+ *         name: slug
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Slug-ul categoriei (ex: "carne", "pizza")
+ *     responses:
+ *       200:
+ *         description: Facets obținute cu succes
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *       400:
+ *         description: Slug invalid
+ *       500:
+ *         description: Eroare internă a serverului
+ */
+router.get('/facets/:slug', (req, res) => productController.getFacetsByCategorySlug(req, res));
+
 // ELIMINAT: GET /products/filter - folosește /browse/products pentru filtrare
 
 // Eliminat: /products/low-stock - funcționalitate administrativă, nu pentru frontend
@@ -293,7 +326,7 @@ router.get('/', (req, res) => productController.getAllProducts(req, res));
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get('/:id', (req, res) => productController.getProductById(req, res));
+// Eliminat: GET /products/:id – detaliu produs prin ID nu este permis (folosim doar slug-uri)
 
 // ELIMINAT: PUT /products/:id - funcționalitate administrativă
 

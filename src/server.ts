@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import path from 'node:path';
 import swaggerUi from 'swagger-ui-express';
 import fs from 'node:fs';
@@ -10,6 +10,7 @@ import { categoryRoutes } from './routes/categoryRoutes';
 import { productRoutes } from './routes/productRoutes';
 import { browseRoutes } from './routes/browse';
 import { taxonomyRoutes } from './routes/taxonomyRoutes';
+import { cartRoutes } from './routes/cart';
 import { PrismaClient } from '@prisma/client';
 
 // La pornire, ne asigurăm că tabela Product are coloanele necesare (basePrice, minPrice, maxPrice)
@@ -89,7 +90,15 @@ export function createApp() {
   
   app.use(express.json());
   app.use(cookieParser());
-  
+
+  // Servește fișierul OpenAPI YAML din sursă (prioritar față de static)
+  app.get('/openapi.yaml', (_req, res) => {
+    const filePath = path.join(process.cwd(), 'src', 'docs', 'openapi.yaml');
+    res.setHeader('Content-Type', 'text/yaml');
+    res.setHeader('Content-Disposition', 'inline; filename="openapi.yaml"');
+    res.send(fs.readFileSync(filePath, 'utf8'));
+  });
+
   // Servește fișiere statice din public (pentru scriptul custom și alte resurse)
   app.use(express.static(path.join(process.cwd(), 'public')));
 
@@ -104,6 +113,7 @@ export function createApp() {
   app.use('/api/products', productRoutes);
   app.use('/api/browse', browseRoutes);
   app.use('/api/taxonomies', taxonomyRoutes); // TODO: protejează cu RBAC (admin/moderator)
+  app.use('/api/cart', cartRoutes);
 
   // Also expose routes at paths used in OpenAPI (no /api prefix)
   app.use('/auth', authRoutes);
@@ -111,6 +121,7 @@ export function createApp() {
   app.use('/products', productRoutes);
   app.use('/browse', browseRoutes);
   app.use('/taxonomies', taxonomyRoutes);
+  app.use('/cart', cartRoutes);
 
   // Swagger UI serving the clean OpenAPI YAML
   app.use('/docs', swaggerUi.serve, swaggerUi.setup(undefined, {
@@ -120,12 +131,18 @@ export function createApp() {
     customCssUrl: '/swagger-custom.css',
   }));
 
-  // Servește fișierul YAML public și setează content-type corect
-  app.get('/openapi.yaml', (_req, res) => {
-    const filePath = path.join(process.cwd(), 'src', 'docs', 'openapi.yaml');
-    res.setHeader('Content-Type', 'text/yaml');
-    res.setHeader('Content-Disposition', 'inline; filename="openapi.yaml"');
-    res.send(fs.readFileSync(filePath, 'utf8'));
+  // 404 handler for unknown routes
+  app.use((req: Request, res: Response) => {
+    res.status(404).json({ message: 'Not Found' });
+  });
+
+  // Centralized error handler
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    console.error('Unhandled error:', err);
+    const status = typeof err?.status === 'number' ? err.status : 500;
+    const message = err?.message || 'Internal Server Error';
+    res.status(status).json({ message });
   });
 
   return app;
