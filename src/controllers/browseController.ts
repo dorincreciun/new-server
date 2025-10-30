@@ -29,9 +29,9 @@ export class BrowseController {
       const totalPages = Math.ceil(total / DEFAULT_LIMIT);
 
       const response: BrowseResponse = {
-        message: 'Produsele au fost filtrate cu succes',
+        success: true,
         data: products,
-        pagination: {
+        meta: {
           page: query.page,
           limit: DEFAULT_LIMIT,
           total,
