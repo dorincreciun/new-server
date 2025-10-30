@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { BrowseService } from '../services/browseService';
-import { BrowseQuerySchema, BrowseResponse } from '../types/browse';
+import { BrowseQuerySchema } from '../types/browse';
+import { ok } from '../utils/response';
 
 const browseService = new BrowseService();
 

@@ -133,7 +133,7 @@ export function createApp() {
 
   // 404 handler for unknown routes
   app.use((req: Request, res: Response) => {
-    res.status(404).json({ message: 'Not Found' });
+    res.status(404).json({ error: 'Not Found' });
   });
 
   // Centralized error handler
@@ -141,8 +141,9 @@ export function createApp() {
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     console.error('Unhandled error:', err);
     const status = typeof err?.status === 'number' ? err.status : 500;
-    const message = err?.message || 'Internal Server Error';
-    res.status(status).json({ message });
+    const error = err?.message || 'Internal Server Error';
+    const details = Array.isArray(err?.details) ? err.details : undefined;
+    res.status(status).json({ error, ...(details ? { details } : {}) });
   });
 
   return app;

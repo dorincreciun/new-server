@@ -182,7 +182,7 @@ router.post('/register', async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Parola trebuie să aibă cel puțin 6 caractere' });
     }
 
-    const result = await authService.register({ email: normalizedEmail, password, name });
+    const result = await authService.register({ email: normalizedEmail, password, name: name ?? "" });
     
     // Setează cookie-urile
     setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken);

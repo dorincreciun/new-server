@@ -7,27 +7,13 @@ export const BrowseQuerySchema = z.object({
   priceMin: z.coerce.number().min(0).optional(),
   priceMax: z.coerce.number().min(0).optional(),
   flags: z
-    .union([
-      z.string(),
-      z.array(z.string())
-    ])
+    .array(z.string())
     .optional()
-    .transform((val) => {
-      if (!val) return [] as string[];
-      if (Array.isArray(val)) return val.map((s) => s.trim()).filter(Boolean);
-      return val.split(',').map((s) => s.trim()).filter(Boolean);
-    }),
+    .default([]),
   ingredients: z
-    .union([
-      z.string(),
-      z.array(z.string())
-    ])
+    .array(z.string())
     .optional()
-    .transform((val) => {
-      if (!val) return [] as string[];
-      if (Array.isArray(val)) return val.map((s) => s.trim()).filter(Boolean);
-      return val.split(',').map((s) => s.trim()).filter(Boolean);
-    }),
+    .default([]),
   dough: z.string().optional(),
   size: z.string().optional(),
   isCustomizable: z.coerce.boolean().optional(),

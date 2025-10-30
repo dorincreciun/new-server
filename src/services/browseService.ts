@@ -81,7 +81,8 @@ export class BrowseService {
     products: ProductWithRelations[];
     total: number;
   }> {
-    const { sort, order, page, limit } = query;
+    const { sort, order, page } = query;
+    const DEFAULT_LIMIT = 20;
 
     const where = this.buildWhere(query);
 
@@ -105,7 +106,7 @@ export class BrowseService {
         break;
     }
 
-    const skip = (page - 1) * limit;
+    const skip = (page - 1) * DEFAULT_LIMIT;
 
     const [products, total] = await Promise.all([
       prisma.product.findMany({
@@ -118,7 +119,7 @@ export class BrowseService {
         },
         orderBy,
         skip,
-        take: limit,
+        take: DEFAULT_LIMIT,
       }),
       prisma.product.count({ where })
     ]);
