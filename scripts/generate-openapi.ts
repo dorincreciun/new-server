@@ -11,20 +11,12 @@ const swaggerSpec = swaggerJSDoc({
     info: {
       title: config.swaggerTitle,
       version: config.swaggerVersion,
-      description: 'API pentru sistemul de autorizare cu JWT',
+      description: 'API public. Autentificare prin cookie HTTP-Only; clientul trebuie să folosească credentials: \'include\'.',
     },
     servers: config.swaggerServerUrl
       ? [{ url: config.swaggerServerUrl }]
       : [{ url: `http://localhost:${config.port}` }],
-    components: {
-      securitySchemes: {
-        bearerAuth: {
-          type: 'http',
-          scheme: 'bearer',
-          bearerFormat: 'JWT',
-        },
-      },
-    },
+    components: {}, 
   },
   apis: ['./src/routes/*.ts'],
 });

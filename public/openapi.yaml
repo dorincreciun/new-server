@@ -2,15 +2,10 @@ openapi: 3.0.3
 info:
   title: API
   version: 1.0.0
-  description: API pentru sistemul de autorizare cu JWT
+  description: 'API public. Autentificare prin cookie HTTP-Only; clientul trebuie să folosească credentials: ''include''.'
 servers:
   - url: http://localhost:3000
 components:
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
   schemas:
     UserDTO:
       type: object
@@ -579,46 +574,6 @@ paths:
               examples:
                 ServerError:
                   $ref: '#/components/schemas/Error/examples/ServerError'
-  /auth/refresh:
-    post:
-      summary: Refresh access token
-      tags:
-        - Auth
-      responses:
-        '200':
-          description: Token refreshed successfully
-          headers:
-            Set-Cookie:
-              $ref: '#/components/headers/SetCookieHeader'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthResponse'
-              examples:
-                Success:
-                  value:
-                    user:
-                      id: 1
-                      email: user@example.com
-                      name: Ion
-        '401':
-          description: Missing, invalid or expired refresh token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              examples:
-                Unauthorized:
-                  $ref: '#/components/schemas/Error/examples/Unauthorized'
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              examples:
-                ServerError:
-                  $ref: '#/components/schemas/Error/examples/ServerError'
   /auth/me:
     get:
       summary: Returnează utilizatorul autentificat
@@ -709,25 +664,25 @@ paths:
           name: priceMin
           schema:
             type: number
-          description: Prețul minim
+          description: Prețul minim (filtrare pe minPrice)
           example: 200
         - in: query
           name: priceMax
           schema:
             type: number
-          description: Prețul maxim
+          description: Prețul maxim (filtrare pe minPrice)
           example: 500
         - in: query
           name: flags
           schema:
             type: string
-          description: Flaguri separate prin virgulă
+          description: Flaguri separate prin virgulă sau flags[]=a&flags[]=b
           example: spicy,vegetarian
         - in: query
           name: ingredients
           schema:
             type: string
-          description: Ingrediente separate prin virgulă
+          description: Ingrediente separate prin virgulă sau ingredients[]=a&ingredients[]=b
           example: mozzarella,tomato
         - in: query
           name: dough
@@ -746,11 +701,13 @@ paths:
           schema:
             type: boolean
           description: Filtrează produsele care pot fi personalizate
+          example: true
         - in: query
           name: isNew
           schema:
             type: boolean
           description: Filtrează produsele noi (releasedAt în ultimele newerThanDays zile)
+          example: true
         - in: query
           name: newerThanDays
           schema:
@@ -856,7 +813,7 @@ paths:
   /browse/filters:
     get:
       summary: Obține opțiunile de filtrare disponibile
-      description: Returnează toate opțiunile de filtrare cu numărul de produse pentru fiecare. Fără categorySlug → filtre globale; cu categorySlug → filtre contextuale (ținând cont de ceilalți parametri)
+      description: Returnează toate opțiunile de filtrare cu numărul de produse pentru fiecare. Fără categorySlug → filtre globale; cu categorySlug → filtre contextuale (ținând cont de ceilalți parametri).
       tags:
         - Browse
       parameters:
@@ -978,80 +935,33 @@ paths:
                             type: number
                           max:
                             type: number
-  /categories:
-    post:
-      summary: Creează o nouă categorie
-      description: Creează o nouă categorie în sistem. Numele categoriei trebuie să fie unic.
+  /cart:
+    get:
+      summary: Obține coșul curent al utilizatorului
       tags:
-        - Categories
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateCategoryRequest'
-            examples:
-              Carne:
-                summary: Categorie pentru carne
-                value:
-                  name: Carne
-                  description: Produse din carne de porc, vită, pui
-              Branza:
-                summary: Categorie pentru brânzeturi
-                value:
-                  name: Branza
-                  description: Brânze de diferite tipuri
+        - Cart
       responses:
-        '201':
-          description: Categoria a fost creată cu succes
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CategoryResponse'
-              examples:
-                Success:
-                  summary: Categoria creată cu succes
-                  value:
-                    message: Categoria a fost creată cu succes
-                    data:
-                      id: 1
-                      name: Carne
-                      description: Produse din carne de porc, vită, pui
-                      createdAt: '2024-01-15T10:30:00Z'
-                      updatedAt: '2024-01-15T10:30:00Z'
-        '400':
-          description: Date invalide
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                MissingName:
-                  summary: Nume lipsă
-                  value:
-                    error: Numele categoriei este obligatoriu și trebuie să fie un string non-gol
-        '409':
-          description: Categoria există deja
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                DuplicateName:
-                  summary: Nume duplicat
-                  value:
-                    error: O categorie cu acest nume există deja
-        '500':
-          description: Eroare internă a serverului
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                ServerError:
-                  summary: Eroare server
-                  value:
-                    error: Eroare internă a serverului
+        '200':
+          description: OK
+    delete:
+      summary: Golește coșul utilizatorului
+      tags:
+        - Cart
+  /cart/items:
+    post:
+      summary: Adaugă o variantă de produs în coș (sau crește cantitatea dacă există)
+      tags:
+        - Cart
+  /cart/items/{itemId}:
+    patch:
+      summary: Actualizează cantitatea unui item din coș
+      tags:
+        - Cart
+    delete:
+      summary: Elimină un item din coș
+      tags:
+        - Cart
+  /categories:
     get:
       summary: Obține toate categoriile
       description: Returnează o listă cu toate categoriile din sistem, sortate alfabetic după nume.
@@ -1106,170 +1016,7 @@ paths:
           description: Slug invalid
         '404':
           description: Categoria nu a fost găsită
-  /categories/{id}:
-    get:
-      summary: Obține o categorie după ID
-      tags:
-        - Categories
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
-          description: ID-ul categoriei
-          example: 1
-      responses:
-        '200':
-          description: Categoria a fost găsită
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CategoryResponse'
-        '400':
-          description: ID invalid
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Categoria nu a fost găsită
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Eroare internă a serverului
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-    put:
-      summary: Actualizează o categorie
-      tags:
-        - Categories
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
-          description: ID-ul categoriei
-          example: 1
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateCategoryRequest'
-      responses:
-        '200':
-          description: Categoria a fost actualizată cu succes
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CategoryResponse'
-        '400':
-          description: Date invalide
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Categoria nu a fost găsită
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '409':
-          description: Numele categoriei există deja
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Eroare internă a serverului
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-    delete:
-      summary: Șterge o categorie
-      tags:
-        - Categories
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
-          description: ID-ul categoriei
-          example: 1
-      responses:
-        '200':
-          description: Categoria a fost ștearsă cu succes
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Categoria a fost ștearsă cu succes
-        '400':
-          description: ID invalid
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Categoria nu a fost găsită
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Eroare internă a serverului
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
   /products:
-    post:
-      summary: Creează un nou produs
-      tags:
-        - Products
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateProductRequest'
-      responses:
-        '201':
-          description: Produsul a fost creat cu succes
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProductResponse'
-        '400':
-          description: Date invalide
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Categoria specificată nu există
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Eroare internă a serverului
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
     get:
       summary: Obține toate produsele (endpoint simplu)
       tags:
@@ -1288,400 +1035,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
       description: Returnează toate produsele fără filtrare avansată. Pentru filtrare complexă, folosește /browse/products.
-  /products/facets/{slug}:
-    get:
-      summary: Obține listele de filtre (facets) pentru o categorie după slug
-      description: Returnează valorile disponibile pentru filtre (flags, ingredients, variants) în categoria dată. Valorile sunt deduse din produsele existente.
-      tags:
-        - Products
-      parameters:
-        - in: path
-          name: slug
-          required: true
-          schema:
-            type: string
-          description: Slug-ul categoriei
-      responses:
-        '200':
-          description: Facets pentru categorie
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                  data:
-                    type: object
-                    properties:
-                      flags:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            value:
-                              type: string
-                            count:
-                              type: integer
-                      ingredients:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            value:
-                              type: string
-                            count:
-                              type: integer
-                      variants:
-                        type: object
-                        additionalProperties:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              value:
-                                type: string
-                              count:
-                                type: integer
-        '400':
-          description: Slug invalid
-        '500':
-          description: Eroare internă
-  /products/filter:
-    get:
-      summary: Filtrează produse după categorie, flags, ingrediente, variante și preț
-      description: Toți parametrii sunt opționali. Dacă `categorySlug` lipsește sau este gol, se returnează toate produsele. `flagsMode`/`ingredientsMode`/`variantsMode` controlează logica (all/any).
-      tags:
-        - Products
-      parameters:
-        - in: query
-          name: categorySlug
-          schema:
-            type: string
-          description: Slug-ul categoriei; dacă lipsește/gol → toate produsele
-        - in: query
-          name: search
-          schema:
-            type: string
-          description: Caută în nume
-        - in: query
-          name: flags
-          schema:
-            type: array
-            items:
-              type: string
-          style: form
-          explode: true
-          description: 'Chei flag (ex: vegan). Poate apărea de mai multe ori (flags=vegan&flags=spicy)'
-        - in: query
-          name: flagsMode
-          schema:
-            type: string
-            enum:
-              - all
-              - any
-            default: any
-        - in: query
-          name: ingredients
-          schema:
-            type: array
-            items:
-              type: string
-          style: form
-          explode: true
-          description: Chei ingrediente; implicit mode=all
-        - in: query
-          name: ingredientsMode
-          schema:
-            type: string
-            enum:
-              - all
-              - any
-            default: all
-        - in: query
-          name: variants
-          schema:
-            type: array
-            items:
-              type: string
-          style: form
-          explode: true
-          description: 'Valori de variantă (ex: large, thin); se caută în toate cheile de variantă'
-        - in: query
-          name: variantsMode
-          schema:
-            type: string
-            enum:
-              - all
-              - any
-            default: any
-        - in: query
-          name: priceMin
-          schema:
-            type: number
-        - in: query
-          name: priceMax
-          schema:
-            type: number
-        - in: query
-          name: page
-          schema:
-            type: integer
-            minimum: 1
-            default: 1
-        - in: query
-          name: pageSize
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 20
-        - in: query
-          name: sortBy
-          schema:
-            type: string
-            enum:
-              - price
-              - createdAt
-              - popularity
-            default: createdAt
-        - in: query
-          name: order
-          schema:
-            type: string
-            enum:
-              - asc
-              - desc
-            default: desc
-      responses:
-        '200':
-          description: Lista filtrată paginată
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Product'
-                  page:
-                    type: integer
-                  pageSize:
-                    type: integer
-                  total:
-                    type: integer
-        '400':
-          description: Parametri invalizi
-        '500':
-          description: Eroare internă
-  /products/category/{categoryId}:
-    get:
-      summary: Obține produsele dintr-o anumită categorie
-      description: Returnează toate produsele care aparțin unei categorii specifice, identificată prin ID. Aceasta este funcționalitatea principală pentru obținerea produselor după categorie.
-      tags:
-        - Products
-      parameters:
-        - in: path
-          name: categoryId
-          required: true
-          schema:
-            type: integer
-            minimum: 1
-          description: ID-ul unic al categoriei
-          example: 1
-      responses:
-        '200':
-          description: Produsele din categoria specificată
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProductListResponse'
-              examples:
-                Success:
-                  summary: Produse din categoria Carne
-                  value:
-                    message: Produsele din categoria specificată au fost obținute cu succes
-                    data:
-                      - id: 1
-                        name: Carne de porc
-                        description: Carne de porc proaspata
-                        price: '25.5'
-                        stock: 100
-                        categoryId: 1
-                        createdAt: '2024-01-15T10:08:33.750Z'
-                        updatedAt: '2024-01-15T10:08:33.750Z'
-                        category:
-                          id: 1
-                          name: Carne
-                          description: Produse din carne de porc, vită, pui
-                          createdAt: '2024-01-15T10:08:11.243Z'
-                          updatedAt: '2024-01-15T10:08:11.243Z'
-                      - id: 2
-                        name: Carne de vita
-                        description: Carne de vita premium
-                        price: '45'
-                        stock: 50
-                        categoryId: 1
-                        createdAt: '2024-01-15T10:08:39.356Z'
-                        updatedAt: '2024-01-15T10:08:39.356Z'
-                        category:
-                          id: 1
-                          name: Carne
-                          description: Produse din carne de porc, vită, pui
-                          createdAt: '2024-01-15T10:08:11.243Z'
-                          updatedAt: '2024-01-15T10:08:11.243Z'
-                    count: 2
-                Empty:
-                  summary: Categoria fără produse
-                  value:
-                    message: Produsele din categoria specificată au fost obținute cu succes
-                    data: []
-                    count: 0
-        '400':
-          description: ID invalid
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                InvalidID:
-                  summary: ID invalid
-                  value:
-                    error: ID-ul categoriei trebuie să fie un număr întreg pozitiv
-        '500':
-          description: Eroare internă a serverului
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                ServerError:
-                  summary: Eroare server
-                  value:
-                    error: Eroare internă a serverului
-  /products/category-name/{categoryName}:
-    get:
-      summary: Obține produsele dintr-o anumită categorie (după numele categoriei)
-      description: Returnează toate produsele care aparțin unei categorii specifice, identificată prin numele categoriei. Alternativă la căutarea după ID.
-      tags:
-        - Products
-      parameters:
-        - in: path
-          name: categoryName
-          required: true
-          schema:
-            type: string
-            minLength: 1
-          description: Numele exact al categoriei (case-sensitive)
-          example: Branza
-      responses:
-        '200':
-          description: Produsele din categoria specificată
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProductListResponse'
-              examples:
-                Success:
-                  summary: Produse din categoria Branza
-                  value:
-                    message: Produsele din categoria specificată au fost obținute cu succes
-                    data:
-                      - id: 3
-                        name: Cascaval
-                        description: Cascaval de vaca
-                        price: '18.75'
-                        stock: 75
-                        categoryId: 2
-                        createdAt: '2024-01-15T10:08:45.115Z'
-                        updatedAt: '2024-01-15T10:08:45.115Z'
-                        category:
-                          id: 2
-                          name: Branza
-                          description: Brânze de diferite tipuri
-                          createdAt: '2024-01-15T10:08:15.917Z'
-                          updatedAt: '2024-01-15T10:08:15.917Z'
-                    count: 1
-                Empty:
-                  summary: Categoria fără produse
-                  value:
-                    message: Produsele din categoria specificată au fost obținute cu succes
-                    data: []
-                    count: 0
-        '400':
-          description: Numele categoriei invalid
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                InvalidName:
-                  summary: Nume invalid
-                  value:
-                    error: Numele categoriei este obligatoriu și trebuie să fie un string non-gol
-        '500':
-          description: Eroare internă a serverului
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                ServerError:
-                  summary: Eroare server
-                  value:
-                    error: Eroare internă a serverului
-  /products/category-slug/{slug}:
-    get:
-      summary: Obține produsele dintr-o categorie după slug
-      description: Returnează toate produsele care aparțin unei categorii, identificată prin slug.
-      tags:
-        - Products
-      parameters:
-        - in: path
-          name: slug
-          required: true
-          schema:
-            type: string
-            minLength: 1
-          description: Slug-ul categoriei
-          example: carne
-      responses:
-        '200':
-          description: Produsele din categoria specificată
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProductListResponse'
-        '400':
-          description: Slug invalid
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Eroare internă a serverului
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  /categories/{slug}/products:
-    get:
-      summary: Listează produsele dintr-o categorie după slug (cu aceleași filtre ca /products)
-      description: Alias pentru /products cu categorySlug derivat din path. Acceptă aceiași parametri de filtrare și paginare.
-      tags:
-        - Products
-      parameters:
-        - in: path
-          name: slug
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Lista filtrată paginată
   /products/{id}:
     get:
       summary: Obține un produs după ID
@@ -1720,64 +1073,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-    put:
-      summary: Actualizează un produs
+  /taxonomies/ingredients:
+    get:
+      summary: Listează ingredientele disponibile
       tags:
-        - Products
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
-          description: ID-ul produsului
-          example: 1
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateProductRequest'
+        - Taxonomies
+      description: Returnează lista cu toate ingredientele disponibile pentru pizza
       responses:
         '200':
-          description: Produsul a fost actualizat cu succes
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProductResponse'
-        '400':
-          description: Date invalide
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Produsul sau categoria nu a fost găsită
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Eroare internă a serverului
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-    delete:
-      summary: Șterge un produs
-      tags:
-        - Products
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
-          description: ID-ul produsului
-          example: 1
-      responses:
-        '200':
-          description: Produsul a fost șters cu succes
+          description: Lista cu ingredientele
           content:
             application/json:
               schema:
@@ -1785,104 +1089,108 @@ paths:
                 properties:
                   message:
                     type: string
-                    example: Produsul a fost șters cu succes
-        '400':
-          description: ID invalid
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Produsul nu a fost găsit
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Eroare internă a serverului
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  /products/{id}/stock:
-    put:
-      summary: Actualizează stocul unui produs
-      tags:
-        - Products
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
-          description: ID-ul produsului
-          example: 1
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateStockRequest'
-      responses:
-        '200':
-          description: Stocul produsului a fost actualizat cu succes
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProductResponse'
-        '400':
-          description: Date invalide
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Produsul nu a fost găsit
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Eroare internă a serverului
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  /taxonomies/ingredients:
-    get:
-      summary: Listează ingredientele
-      tags:
-        - Taxonomies
-    post:
-      summary: Creează un ingredient
-      tags:
-        - Taxonomies
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        key:
+                          type: string
+                        label:
+                          type: string
   /taxonomies/flags:
     get:
-      summary: Listează flagurile
+      summary: Listează flagurile disponibile
       tags:
         - Taxonomies
-    post:
-      summary: Creează un flag
-      tags:
-        - Taxonomies
-  /taxonomies/variants:
+      description: Returnează lista cu toate flagurile disponibile pentru filtrare
+      responses:
+        '200':
+          description: Lista cu flagurile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        key:
+                          type: string
+                        label:
+                          type: string
+  /taxonomies/dough-types:
     get:
-      summary: Listează opțiunile de variante
+      summary: Listează tipurile de aluat disponibile
       tags:
         - Taxonomies
-    post:
-      summary: Creează o opțiune de variantă
+      description: Returnează lista cu toate tipurile de aluat disponibile
+      responses:
+        '200':
+          description: Lista cu tipurile de aluat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        key:
+                          type: string
+                        label:
+                          type: string
+  /taxonomies/size-options:
+    get:
+      summary: Listează opțiunile de mărime disponibile
       tags:
         - Taxonomies
+      description: Returnează lista cu toate mărimile disponibile pentru pizza
+      responses:
+        '200':
+          description: Lista cu mărimile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        key:
+                          type: string
+                        label:
+                          type: string
 tags:
   - name: Auth
     description: Operațiuni de autentificare și gestionare utilizatori cu cookie-uri HTTP-Only
   - name: Browse
     description: Filtrare și căutare avansată de produse
+  - name: Cart
+    description: Coș de cumpărături per utilizator (autentificat)
   - name: Categories
     description: Gestionarea categoriilor de produse
   - name: Products
     description: Gestionarea produselor și căutarea după categorii
   - name: Taxonomies
-    description: Cataloge pentru ingrediente, flaguri și opțiuni de variante (fără permisiuni temporar)
+    description: Endpoint-uri pentru obținerea datelor de taxonomie (ingrediente, flaguri, variante) - DOAR CITIRE

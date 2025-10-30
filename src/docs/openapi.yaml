@@ -4,17 +4,14 @@ info:
   title: Pizza Shop API
   version: 2.0.0
   description: >
-    API pentru magazinul de pizza - autentificare JWT, navigare produse cu filtre (browse) și taxonomii.
+    API pentru magazinul de pizza. Autentificarea se face prin cookie HTTP-Only setat de server la /auth/login.
+    Clientul (React) trebuie să trimită toate requesturile autentificate cu credentials: 'include'.
+
     Include categorii de pizza, produse cu ingrediente și variante, filtrare avansată și taxonomii pentru client.
     Toate endpoint-urile administrative au fost eliminate - doar funcționalități pentru client.
 servers:
   - url: http://localhost:3000
 components:
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
   schemas:
     UserDTO:
       type: object
@@ -25,6 +22,9 @@ components:
         name: { type: string, example: Ion Popescu }
     AuthResponse:
       type: object
+      description: >
+        Răspunsul nu conține tokenul deoarece este setat în cookie HTTP-Only la login.
+        Clientul trebuie să trimită cererile ulterioare cu credentials: 'include'.
       properties:
         user:
           $ref: '#/components/schemas/UserDTO'
@@ -175,20 +175,20 @@ components:
 paths:
   /cart:
     get:
-      summary: Obține coșul curent al utilizatorului
+      summary: Obține coșul curent (necesită autentificare prin cookie)
       tags: [Cart]
       responses:
         '200':
           description: OK
     delete:
-      summary: Golește coșul utilizatorului
+      summary: Golește coșul utilizatorului (necesită autentificare prin cookie)
       tags: [Cart]
       responses:
         '204':
           description: Fără conținut
   /cart/items:
     post:
-      summary: Adaugă o variantă de produs în coș (sau crește cantitatea)
+      summary: Adaugă o variantă de produs în coș (necesită autentificare prin cookie)
       tags: [Cart]
       requestBody:
         required: true
@@ -207,7 +207,7 @@ paths:
         '404': { description: Varianta nu a fost găsită }
   /cart/items/{itemId}:
     patch:
-      summary: Actualizează cantitatea unui item din coș
+      summary: Actualizează cantitatea unui item din coș (necesită autentificare prin cookie)
       tags: [Cart]
       parameters:
         - in: path
@@ -228,7 +228,7 @@ paths:
         '400': { description: Cantitate invalidă }
         '404': { description: Item-ul nu a fost găsit }
     delete:
-      summary: Elimină un item din coș
+      summary: Elimină un item din coș (necesită autentificare prin cookie)
       tags: [Cart]
       parameters:
         - in: path
@@ -315,7 +315,7 @@ paths:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
   /auth/me:
     get:
-      summary: Returnează utilizatorul autentificat
+      summary: Returnează utilizatorul autentificat (necesită autentificare prin cookie)
       tags: [Auth]
       responses:
         '200':
@@ -672,7 +672,9 @@ paths:
                     items: { $ref: '#/components/schemas/SizeOption' }
 tags:
   - name: Auth
-    description: Operațiuni de autentificare și gestionare utilizatori cu cookie-uri HTTP-Only
+    description: >
+      Operațiuni de autentificare și gestionare utilizatori cu cookie-uri HTTP-Only.
+      După /auth/login serverul setează cookie-ul; clientul trebuie să trimită cererile ulterioare cu credentials: 'include'.
   - name: Browse
     description: Filtrare și căutare avansată de produse
   - name: Categories
