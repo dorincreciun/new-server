@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { BrowseService } from '../services/browseService';
-import { BrowseQuerySchema } from '../types/browse';
-import { ok } from '../utils/response';
+import { BrowseQuerySchema, BrowseResponse } from '../types/browse';
 
 const browseService = new BrowseService();
 
@@ -29,9 +28,9 @@ export class BrowseController {
       const totalPages = Math.ceil(total / DEFAULT_LIMIT);
 
       const response: BrowseResponse = {
-        success: true,
+        message: 'Produsele au fost filtrate cu succes',
         data: products,
-        meta: {
+        pagination: {
           page: query.page,
           limit: DEFAULT_LIMIT,
           total,

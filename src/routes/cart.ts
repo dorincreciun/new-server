@@ -25,7 +25,7 @@ const router = Router();
 router.get('/', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   const userId = req.user!.id;
   const cart = await cartService.getCartWithItems(userId);
-  res.status(200).json({ success: true, data: cart });
+  res.json(cart);
 });
 
 /**

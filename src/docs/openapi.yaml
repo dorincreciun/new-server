@@ -4,14 +4,17 @@ info:
   title: Pizza Shop API
   version: 2.0.0
   description: >
-    API pentru magazinul de pizza. Autentificarea se face prin cookie HTTP-Only setat de server la /auth/login.
-    Clientul (React) trebuie să trimită toate requesturile autentificate cu credentials: 'include'.
-
+    API pentru magazinul de pizza - autentificare JWT, navigare produse cu filtre (browse) și taxonomii.
     Include categorii de pizza, produse cu ingrediente și variante, filtrare avansată și taxonomii pentru client.
     Toate endpoint-urile administrative au fost eliminate - doar funcționalități pentru client.
 servers:
   - url: http://localhost:3000
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
     UserDTO:
       type: object
@@ -22,9 +25,6 @@ components:
         name: { type: string, example: Ion Popescu }
     AuthResponse:
       type: object
-      description: >
-        Răspunsul nu conține tokenul deoarece este setat în cookie HTTP-Only la login.
-        Clientul trebuie să trimită cererile ulterioare cu credentials: 'include'.
       properties:
         user:
           $ref: '#/components/schemas/UserDTO'
@@ -78,24 +78,28 @@ components:
       type: object
       required: [key]
       properties:
+        id: { type: string, example: ingredient-mozzarella }
         key: { type: string, example: mozzarella }
         label: { type: string, example: Mozzarella }
     Flag:
       type: object
       required: [key]
       properties:
+        id: { type: string, example: flag-vegetarian }
         key: { type: string, example: vegetarian }
         label: { type: string, example: Vegetarian }
     DoughType:
       type: object
       required: [key]
       properties:
+        id: { type: string, example: dough-clasic }
         key: { type: string, example: clasic }
         label: { type: string, example: Aluat Clasic }
     SizeOption:
       type: object
       required: [key]
       properties:
+        id: { type: string, example: size-medie }
         key: { type: string, example: medie }
         label: { type: string, example: Medie (30cm) }
     # Product core (prod-ready, sincronizat cu variante)
@@ -166,29 +170,83 @@ components:
           type: array
           items: { $ref: '#/components/schemas/ProductWithRelations' }
         pagination:
+          $ref: '#/components/schemas/PaginationMeta'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+    StandardResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Operatie efectuata cu succes
+        data:
+          nullable: true
+        meta:
+          nullable: true
+          type: object
+    PaginationMeta:
+      type: object
+      properties:
+        page: { type: integer, example: 1 }
+        limit: { type: integer, example: 12 }
+        total: { type: integer, example: 65 }
+        totalPages: { type: integer, example: 6 }
+    CartItem:
+      type: object
+      required: [id, quantity, lineTotal]
+      properties:
+        id: { type: integer, example: 501 }
+        product:
+          $ref: '#/components/schemas/Product'
+        variant:
           type: object
           properties:
-            page: { type: integer, example: 1 }
-            limit: { type: integer, example: 12 }
-            total: { type: integer, example: 65 }
-            totalPages: { type: integer, example: 6 }
+            id: { type: integer, example: 101 }
+            doughType: { $ref: '#/components/schemas/DoughType' }
+            sizeOption: { $ref: '#/components/schemas/SizeOption' }
+            price: { type: number, example: 120 }
+        quantity: { type: integer, example: 2 }
+        lineTotal: { type: number, example: 240 }
+    Cart:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/CartItem' }
+        subtotal: { type: number, example: 240 }
+        discounts: { type: number, example: 0 }
+        total: { type: number, example: 240 }
 paths:
   /cart:
     get:
-      summary: Obține coșul curent (necesită autentificare prin cookie)
+      summary: Obține coșul curent al utilizatorului
       tags: [Cart]
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/StandardResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Cart'
+        '401':
+          description: Unauthorized (cookie lipsă sau expirat)
     delete:
-      summary: Golește coșul utilizatorului (necesită autentificare prin cookie)
+      summary: Golește coșul utilizatorului
       tags: [Cart]
       responses:
         '204':
           description: Fără conținut
   /cart/items:
     post:
-      summary: Adaugă o variantă de produs în coș (necesită autentificare prin cookie)
+      summary: Adaugă o variantă de produs în coș (sau crește cantitatea)
       tags: [Cart]
       requestBody:
         required: true
@@ -202,12 +260,22 @@ paths:
                 quantity: { type: integer, default: 1 }
       responses:
         '201':
-          description: Creat
+          description: Item adăugat în coș
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/StandardResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Cart'
         '400': { description: Date invalide }
         '404': { description: Varianta nu a fost găsită }
+        '401': { description: Unauthorized (cookie lipsă sau expirat) }
   /cart/items/{itemId}:
     patch:
-      summary: Actualizează cantitatea unui item din coș (necesită autentificare prin cookie)
+      summary: Actualizează cantitatea unui item din coș
       tags: [Cart]
       parameters:
         - in: path
@@ -224,11 +292,22 @@ paths:
               properties:
                 quantity: { type: integer }
       responses:
-        '200': { description: OK }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/StandardResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Cart'
         '400': { description: Cantitate invalidă }
         '404': { description: Item-ul nu a fost găsit }
+        '401': { description: Unauthorized (cookie lipsă sau expirat) }
     delete:
-      summary: Elimină un item din coș (necesită autentificare prin cookie)
+      summary: Elimină un item din coș
       tags: [Cart]
       parameters:
         - in: path
@@ -238,6 +317,7 @@ paths:
       responses:
         '204': { description: Fără conținut }
         '404': { description: Item-ul nu a fost găsit }
+        '401': { description: Unauthorized (cookie lipsă sau expirat) }
   /auth/register:
     post:
       summary: Register a new user
@@ -295,7 +375,7 @@ paths:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
   /auth/refresh:
     post:
-      summary: Refresh access token
+      summary: Refresh access token (folosește cookie HTTP-Only setat la login)
       tags: [Auth]
       responses:
         '200':
@@ -315,7 +395,7 @@ paths:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
   /auth/me:
     get:
-      summary: Returnează utilizatorul autentificat (necesită autentificare prin cookie)
+      summary: Returnează utilizatorul autentificat
       tags: [Auth]
       responses:
         '200':
@@ -324,7 +404,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/AuthResponse' }
         '401':
-          description: Unauthorized
+          description: Unauthorized (cookie lipsă sau expirat)
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
@@ -373,14 +453,20 @@ paths:
           description: Preț maxim (pe minPrice)
         - in: query
           name: flags
-          schema: { type: string }
-          description: CSV sau flags[]=a&flags[]=b
-          example: spicy,vegetarian
+          schema:
+            type: array
+            items: { type: string }
+          style: form
+          explode: true
+          description: Filtru după flaguri
         - in: query
           name: ingredients
-          schema: { type: string }
-          description: CSV sau ingredients[]=a&ingredients[]=b
-          example: mozzarella,tomato
+          schema:
+            type: array
+            items: { type: string }
+          style: form
+          explode: true
+          description: Filtru după ingrediente
         - in: query
           name: dough
           schema: { type: string }
@@ -456,12 +542,20 @@ paths:
           schema: { type: number }
         - in: query
           name: flags
-          schema: { type: string }
-          description: CSV sau flags[]=a&flags[]=b
+          schema:
+            type: array
+            items: { type: string }
+          style: form
+          explode: true
+          description: Filtru după flaguri
         - in: query
           name: ingredients
-          schema: { type: string }
-          description: CSV sau ingredients[]=a&ingredients[]=b
+          schema:
+            type: array
+            items: { type: string }
+          style: form
+          explode: true
+          description: Filtru după ingrediente
         - in: query
           name: dough
           schema: { type: string }
@@ -536,11 +630,16 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  items:
-                    type: array
-                    items: { $ref: '#/components/schemas/Category' }
+                allOf:
+                  - $ref: '#/components/schemas/StandardResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/Category' }
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/Category' }
         '500':
           description: Eroare internă
           content:
@@ -672,15 +771,13 @@ paths:
                     items: { $ref: '#/components/schemas/SizeOption' }
 tags:
   - name: Auth
-    description: >
-      Operațiuni de autentificare și gestionare utilizatori cu cookie-uri HTTP-Only.
-      După /auth/login serverul setează cookie-ul; clientul trebuie să trimită cererile ulterioare cu credentials: 'include'.
+    description: Operațiuni de autentificare și gestionare utilizatori cu cookie-uri HTTP-Only
   - name: Browse
     description: Filtrare și căutare avansată de produse
   - name: Categories
     description: Gestionarea categoriilor de produse
   - name: Products
-    description: Gestionarea produselor (CRUD simplu)
+    description: Endpointuri publice de listare și metadate pentru produse (fără operații administrative)
   - name: Taxonomies
     description: Cataloge pentru ingrediente, flaguri și opțiuni de variante
   - name: Cart

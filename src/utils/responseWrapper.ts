@@ -14,9 +14,9 @@ export interface ErrorDetail {
 export function success<T = any, M = any>(data?: T, message?: string, meta?: M): StandardResponse<T, M> {
   return {
     success: true,
-    message,
-    data,
-    meta,
+    ...(message !== undefined ? { message } : {}),
+    ...(data !== undefined ? { data } : {}),
+    ...(meta !== undefined ? { meta } : {}),
   };
 }
 
@@ -29,7 +29,6 @@ export function error(
     success: false,
     message,
     data: null,
-    meta: undefined,
     status,
     ...(details ? { details } : {}),
   };
