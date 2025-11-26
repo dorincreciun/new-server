@@ -338,7 +338,13 @@ router.post('/login', async (req: Request, res: Response) => {
  *               ServerError:
  *                 $ref: '#/components/schemas/Error/examples/ServerError'
  */
-// ELIMINAT: GET /auth/me - funcționalitate complexă, nu necesară pentru frontend simplu
+// Reintrodus: GET /auth/me – returnează utilizatorul autentificat din access_token
+router.get('/me', authenticateToken, (req: AuthenticatedRequest, res: Response) => {
+  if (!req.user) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+  return res.json({ user: req.user });
+});
 
 /**
  * @swagger

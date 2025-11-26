@@ -42,6 +42,18 @@ export async function ensureSchemaCompatibility(): Promise<void> {
     const hasMin = await columnExists('Product', 'minPrice');
     const hasMax = await columnExists('Product', 'maxPrice');
 
+    // Helper pentru a verifica existența unui index
+    async function indexExists(table: string, indexName: string): Promise<boolean> {
+      const rows: Array<{ cnt: bigint | number }> = await prisma.$queryRawUnsafe(
+        `SELECT COUNT(1) AS cnt FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND INDEX_NAME = ?`,
+        db,
+        table,
+        indexName
+      );
+      const cnt = Number((rows[0]?.cnt ?? 0) as any);
+      return cnt > 0;
+    }
+
     // Dacă lipsește basePrice, îl adăugăm și migrăm valoarea din coloana veche `price` dacă există
     if (!hasBase) {
       const hasOldPrice = await columnExists('Product', 'price');
@@ -51,8 +63,11 @@ export async function ensureSchemaCompatibility(): Promise<void> {
       if (hasOldPrice) {
         await prisma.$executeRawUnsafe(`UPDATE Product SET basePrice = price WHERE price IS NOT NULL`);
       }
-      // Index optional pentru sortare după preț
-      await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS idx_product_basePrice ON Product (basePrice)`);
+      // Index opțional pentru sortare după preț
+      const hasBaseIdx = await indexExists('Product', 'idx_product_basePrice');
+      if (!hasBaseIdx) {
+        await prisma.$executeRawUnsafe(`CREATE INDEX idx_product_basePrice ON Product (basePrice)`);
+      }
     }
 
     if (!hasMin) {
@@ -91,23 +106,31 @@ export function createApp() {
   app.use(express.json());
   app.use(cookieParser());
 
-  // Servește fișierul OpenAPI YAML din sursă (prioritar față de static)
-  app.get('/openapi.yaml', (_req, res) => {
-    const filePath = path.join(process.cwd(), 'src', 'docs', 'openapi.yaml');
+  // Servește fișierul OpenAPI YAML generat în public/openapi.yaml (sursă unică)
+  const serveOpenApi = (_req: Request, res: Response) => {
+    const filePath = path.join(process.cwd(), 'public', 'openapi.yaml');
     res.setHeader('Content-Type', 'text/yaml');
     res.setHeader('Content-Disposition', 'inline; filename="openapi.yaml"');
-    res.send(fs.readFileSync(filePath, 'utf8'));
-  });
+    try {
+      res.send(fs.readFileSync(filePath, 'utf8'));
+    } catch (e) {
+      res.status(404).send('# OpenAPI yaml inexistent. Rulați: npm run generate:openapi');
+    }
+  };
+  app.get('/api/openapi.yaml', serveOpenApi);
+  app.get('/openapi.yaml', serveOpenApi);
 
   // Servește fișiere statice din public (pentru scriptul custom și alte resurse)
   app.use(express.static(path.join(process.cwd(), 'public')));
 
-  // Health route
-  app.get('/health', (_req: Request, res: Response) => {
+  // Health route (compatibilitate cu /health și /api/health)
+  const healthHandler = (_req: Request, res: Response) => {
     res.json({ status: 'ok' });
-  });
+  };
+  app.get('/api/health', healthHandler);
+  app.get('/health', healthHandler);
 
-  // API routes
+  // API routes (prefix /api)
   app.use('/api/auth', authRoutes);
   app.use('/api/categories', categoryRoutes);
   app.use('/api/products', productRoutes);
@@ -115,7 +138,7 @@ export function createApp() {
   app.use('/api/taxonomies', taxonomyRoutes); // TODO: protejează cu RBAC (admin/moderator)
   app.use('/api/cart', cartRoutes);
 
-  // Also expose routes at paths used in OpenAPI (no /api prefix)
+  // Compatibilitate: expune și fără prefix /api pentru clienții vechi și pentru descrierile Swagger existente
   app.use('/auth', authRoutes);
   app.use('/categories', categoryRoutes);
   app.use('/products', productRoutes);
@@ -123,13 +146,15 @@ export function createApp() {
   app.use('/taxonomies', taxonomyRoutes);
   app.use('/cart', cartRoutes);
 
-  // Swagger UI serving the clean OpenAPI YAML
-  app.use('/docs', swaggerUi.serve, swaggerUi.setup(undefined, {
-    swaggerUrl: '/openapi.yaml',
+  // Swagger UI serving the clean OpenAPI YAML sub /api și /docs clasic
+  const swaggerMiddleware = swaggerUi.setup(undefined, {
+    swaggerUrl: '/api/openapi.yaml',
     explorer: true,
     customJs: '/swagger-custom.js',
     customCssUrl: '/swagger-custom.css',
-  }));
+  });
+  app.use('/api/docs', swaggerUi.serve, swaggerMiddleware);
+  app.use('/docs', swaggerUi.serve, swaggerMiddleware);
 
   // 404 handler for unknown routes
   app.use((req: Request, res: Response) => {

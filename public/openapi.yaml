@@ -4,7 +4,7 @@ info:
   version: 1.0.0
   description: 'API public. Autentificare prin cookie HTTP-Only; clientul trebuie să folosească credentials: ''include''.'
 servers:
-  - url: http://localhost:3000
+  - url: http://localhost:3000/api
 components:
   schemas:
     UserDTO:
@@ -200,85 +200,40 @@ components:
           items:
             $ref: '#/components/schemas/ProductWithRelations'
         pagination:
-          $ref: '#/components/schemas/PaginationMeta'
-        meta:
-          $ref: '#/components/schemas/PaginationMeta'
-    StandardResponse:
-      type: object
-      properties:
-        success:
-          type: boolean
-          example: true
-        message:
-          type: string
-          example: Operatie efectuata cu succes
-        data:
-          nullable: true
-        meta:
-          nullable: true
           type: object
-    PaginationMeta:
+          properties:
+            page:
+              type: integer
+            limit:
+              type: integer
+            total:
+              type: integer
+    DoughType:
       type: object
-      properties:
-        page:
-          type: integer
-          example: 1
-        limit:
-          type: integer
-          example: 12
-        total:
-          type: integer
-          example: 65
-        totalPages:
-          type: integer
-          example: 6
-    CartItem:
-      type: object
-      required:
-        - id
-        - quantity
-        - lineTotal
+      description: Tip de aluat pentru varianta de produs
       properties:
         id:
           type: integer
-          example: 501
-        product:
-          $ref: '#/components/schemas/Product'
-        variant:
-          type: object
-          properties:
-            id:
-              type: integer
-              example: 101
-            doughType:
-              $ref: '#/components/schemas/DoughType'
-            sizeOption:
-              $ref: '#/components/schemas/SizeOption'
-            price:
-              type: number
-              example: 120
-        quantity:
-          type: integer
           example: 2
-        lineTotal:
-          type: number
-          example: 240
-    Cart:
+        key:
+          type: string
+          example: subtire
+        label:
+          type: string
+          example: Aluat Subțire
+    SizeOption:
       type: object
+      description: Opțiune de mărime pentru varianta de produs
       properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/CartItem'
-        subtotal:
-          type: number
-          example: 240
-        discounts:
-          type: number
-          example: 0
-        total:
-          type: number
-          example: 240
+        id:
+          type: integer
+          example: 3
+        key:
+          type: string
+          example: mare
+        label:
+          type: string
+          example: Mare (35cm)
     Category:
       type: object
       required:
@@ -746,21 +701,15 @@ paths:
         - in: query
           name: flags
           schema:
-            type: array
-            items:
-              type: string
-          style: form
-          explode: true
-          description: Filtru după flaguri
+            type: string
+          description: Flaguri separate prin virgulă sau flags[]=a&flags[]=b
+          example: spicy,vegetarian
         - in: query
           name: ingredients
           schema:
-            type: array
-            items:
-              type: string
-          style: form
-          explode: true
-          description: Filtru după ingrediente
+            type: string
+          description: Ingrediente separate prin virgulă sau ingredients[]=a&ingredients[]=b
+          example: mozzarella,tomato
         - in: query
           name: dough
           schema:
@@ -867,11 +816,6 @@ paths:
                       page: 1
                       limit: 10
                       total: 65
-                    meta:
-                      page: 1
-                      limit: 10
-                      total: 65
-                      totalPages: 7
         '422':
           description: Parametri invalizi
           content:
@@ -923,21 +867,13 @@ paths:
         - in: query
           name: flags
           schema:
-            type: array
-            items:
-              type: string
-          style: form
-          explode: true
-          description: Filtru după flaguri
+            type: string
+          description: Flaguri CSV sau flags[]=a&flags[]=b
         - in: query
           name: ingredients
           schema:
-            type: array
-            items:
-              type: string
-          style: form
-          explode: true
-          description: Filtru după ingrediente
+            type: string
+          description: Ingrediente CSV sau ingredients[]=a&ingredients[]=b
         - in: query
           name: dough
           schema:
@@ -1033,120 +969,24 @@ paths:
       responses:
         '200':
           description: OK
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/StandardResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/Cart'
-        '401':
-          description: Unauthorized (cookie lipsă sau expirat)
     delete:
       summary: Golește coșul utilizatorului
       tags:
         - Cart
-      responses:
-        '204':
-          description: Fără conținut
-        '401':
-          description: Unauthorized (cookie lipsă sau expirat)
   /cart/items:
     post:
       summary: Adaugă o variantă de produs în coș (sau crește cantitatea dacă există)
       tags:
         - Cart
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - productVariantId
-              properties:
-                productVariantId:
-                  type: integer
-                quantity:
-                  type: integer
-                  default: 1
-      responses:
-        '201':
-          description: Item adăugat în coș
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/StandardResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/Cart'
-        '400':
-          description: Date invalide
-        '404':
-          description: Varianta nu a fost găsită
-        '401':
-          description: Unauthorized (cookie lipsă sau expirat)
   /cart/items/{itemId}:
     patch:
       summary: Actualizează cantitatea unui item din coș
       tags:
         - Cart
-      parameters:
-        - in: path
-          name: itemId
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - quantity
-              properties:
-                quantity:
-                  type: integer
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/StandardResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/Cart'
-        '400':
-          description: Cantitate invalidă
-        '404':
-          description: Item-ul nu a fost găsit
-        '401':
-          description: Unauthorized (cookie lipsă sau expirat)
     delete:
       summary: Elimină un item din coș
       tags:
         - Cart
-      parameters:
-        - in: path
-          name: itemId
-          required: true
-          schema:
-            type: integer
-      responses:
-        '204':
-          description: Fără conținut
-        '404':
-          description: Item-ul nu a fost găsit
-        '401':
-          description: Unauthorized (cookie lipsă sau expirat)
   /categories:
     get:
       summary: Obține toate categoriile
@@ -1159,18 +999,12 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/StandardResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/Category'
-                      items:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/Category'
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Category'
         '500':
           description: Eroare internă a serverului
           content:
@@ -1193,7 +1027,7 @@ paths:
           required: true
           schema:
             type: string
-          description: Slug-ul categoriei ("toate" nu este permis)
+          description: Slug-ul categoriei (valoarea toate nu este permisă)
       responses:
         '200':
           description: Categoria găsită
@@ -1227,6 +1061,35 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
       description: Returnează toate produsele fără filtrare avansată. Pentru filtrare complexă, folosește /browse/products.
+  /products/facets/{slug}:
+    get:
+      summary: Obține valorile posibile (facets) pentru filtrele unei categorii (după slug)
+      tags:
+        - Products
+      description: Returnează colecțiile pentru filtre precum flags, ingredients, doughTypes, sizeOptions și intervalul de preț pentru categoria indicată prin slug.
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+          description: Slug-ul categoriei (ex. carne, pizza)
+      responses:
+        '200':
+          description: Facets obținute cu succes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+        '400':
+          description: Slug invalid
+        '500':
+          description: Eroare internă a serverului
   /products/{id}:
     get:
       summary: Obține un produs după ID
@@ -1383,6 +1246,6 @@ tags:
   - name: Categories
     description: Gestionarea categoriilor de produse
   - name: Products
-    description: Endpointuri publice de listare și metadate pentru produse (fără operații administrative)
+    description: Gestionarea produselor și căutarea după categorii
   - name: Taxonomies
     description: Endpoint-uri pentru obținerea datelor de taxonomie (ingrediente, flaguri, variante) - DOAR CITIRE

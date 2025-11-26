@@ -54,7 +54,8 @@ class BrowseService {
         return where.AND.length ? where : {};
     }
     async getProducts(query) {
-        const { sort, order, page, limit } = query;
+        const { sort, order, page } = query;
+        const DEFAULT_LIMIT = 20;
         const where = this.buildWhere(query);
         // Construiește orderBy
         let orderBy = {};
@@ -75,7 +76,7 @@ class BrowseService {
                 ];
                 break;
         }
-        const skip = (page - 1) * limit;
+        const skip = (page - 1) * DEFAULT_LIMIT;
         const [products, total] = await Promise.all([
             prisma.product.findMany({
                 where,
@@ -87,7 +88,7 @@ class BrowseService {
                 },
                 orderBy,
                 skip,
-                take: limit,
+                take: DEFAULT_LIMIT,
             }),
             prisma.product.count({ where })
         ]);

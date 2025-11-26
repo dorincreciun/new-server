@@ -155,6 +155,11 @@ class AuthService {
         if (!tokenRecord || tokenRecord.revokedAt || tokenRecord.expiresAt < new Date()) {
             throw new Error('Refresh token invalid sau expirat');
         }
+        // Verifică hash-ul tokenului trimis față de cel stocat
+        const tokenMatches = await bcryptjs_1.default.compare(refreshToken, tokenRecord.tokenHash);
+        if (!tokenMatches) {
+            throw new Error('Refresh token invalid');
+        }
         // Verifică binding-ul opțional (userAgent/IP)
         if (userAgent && tokenRecord.userAgent && tokenRecord.userAgent !== userAgent) {
             throw new Error('Refresh token compromis - userAgent mismatch');

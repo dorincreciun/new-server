@@ -23,7 +23,7 @@ type AppConfig = {
 
 function resolveJwtAccessSecret(): string {
   const isProd = process.env.NODE_ENV === 'production';
-  const fromEnv = process.env.JWT_ACCESS_SECRET;
+  const fromEnv = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET; // fallback pentru compatibilitate .env vechi
   if (fromEnv) return fromEnv;
   if (!isProd) {
     return 'acc_secret_please_change_in_prod_7b2b9e1d';
@@ -33,7 +33,7 @@ function resolveJwtAccessSecret(): string {
 
 function resolveJwtRefreshSecret(): string {
   const isProd = process.env.NODE_ENV === 'production';
-  const fromEnv = process.env.JWT_REFRESH_SECRET;
+  const fromEnv = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET; // fallback pentru compatibilitate .env vechi
   if (fromEnv) return fromEnv;
   if (!isProd) {
     return 'ref_secret_please_change_in_prod_83f1c4a6';

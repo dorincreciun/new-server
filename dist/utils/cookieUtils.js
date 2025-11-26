@@ -21,46 +21,48 @@ function readRefreshToken(req) {
  * Setează cookie-urile pentru access și refresh token
  */
 function setAuthCookies(res, accessToken, refreshToken) {
+    const isLocalhost = !config_1.config.cookieDomain || config_1.config.cookieDomain === 'localhost' || /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(config_1.config.cookieDomain);
     // Access token cookie - path: "/"
     res.cookie('access_token', accessToken, {
         httpOnly: true,
-        secure: config_1.config.cookieSecure,
+        secure: config_1.config.cookieSameSite === 'none' ? true : config_1.config.cookieSecure, // SameSite=None necesită Secure
         sameSite: config_1.config.cookieSameSite,
         maxAge: config_1.config.accessTokenTtlSeconds * 1000,
-        domain: config_1.config.cookieDomain,
-        path: '/'
+        ...(isLocalhost ? {} : { domain: config_1.config.cookieDomain }),
+        path: '/',
     });
-    // Refresh token cookie - path: "/auth"
+    // Refresh token cookie - path: "/api/auth" (aliniat cu noile rute)
     res.cookie('refresh_token', refreshToken, {
         httpOnly: true,
-        secure: config_1.config.cookieSecure,
+        secure: config_1.config.cookieSameSite === 'none' ? true : config_1.config.cookieSecure,
         sameSite: config_1.config.cookieSameSite,
         maxAge: config_1.config.refreshTokenTtlSeconds * 1000,
-        domain: config_1.config.cookieDomain,
-        path: '/auth'
+        ...(isLocalhost ? {} : { domain: config_1.config.cookieDomain }),
+        path: '/api/auth',
     });
 }
 /**
  * Șterge cookie-urile de autentificare
  */
 function clearAuthCookies(res) {
+    const isLocalhost = !config_1.config.cookieDomain || config_1.config.cookieDomain === 'localhost' || /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(config_1.config.cookieDomain);
     // Clear access token cookie
     res.cookie('access_token', '', {
         httpOnly: true,
-        secure: config_1.config.cookieSecure,
+        secure: config_1.config.cookieSameSite === 'none' ? true : config_1.config.cookieSecure,
         sameSite: config_1.config.cookieSameSite,
         maxAge: 0,
-        domain: config_1.config.cookieDomain,
+        ...(isLocalhost ? {} : { domain: config_1.config.cookieDomain }),
         path: '/'
     });
-    // Clear refresh token cookie
+    // Clear refresh token cookie (calea /api/auth)
     res.cookie('refresh_token', '', {
         httpOnly: true,
-        secure: config_1.config.cookieSecure,
+        secure: config_1.config.cookieSameSite === 'none' ? true : config_1.config.cookieSecure,
         sameSite: config_1.config.cookieSameSite,
         maxAge: 0,
-        domain: config_1.config.cookieDomain,
-        path: '/auth'
+        ...(isLocalhost ? {} : { domain: config_1.config.cookieDomain }),
+        path: '/api/auth'
     });
 }
 //# sourceMappingURL=cookieUtils.js.map

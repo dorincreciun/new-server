@@ -252,7 +252,7 @@ router.get('/', (req, res) => productController.getAllProducts(req, res));
  *         required: true
  *         schema:
  *           type: string
- *         description: Slug-ul categoriei (ex: "carne", "pizza")
+ *         description: Slug-ul categoriei (ex. carne, pizza)
  *     responses:
  *       200:
  *         description: Facets obținute cu succes

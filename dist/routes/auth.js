@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const authService_1 = require("../services/authService");
 const cookieUtils_1 = require("../utils/cookieUtils");
+const auth_1 = require("../middleware/auth");
 const router = (0, express_1.Router)();
 /**
  * @swagger
@@ -176,7 +177,7 @@ router.post('/register', async (req, res) => {
         if (password.length < 6) {
             return res.status(400).json({ message: 'Parola trebuie să aibă cel puțin 6 caractere' });
         }
-        const result = await authService_1.authService.register({ email: normalizedEmail, password, name });
+        const result = await authService_1.authService.register({ email: normalizedEmail, password, name: name ?? "" });
         // Setează cookie-urile
         (0, cookieUtils_1.setAuthCookies)(res, result.tokens.accessToken, result.tokens.refreshToken);
         res.status(201).json({
@@ -323,7 +324,13 @@ router.post('/login', async (req, res) => {
  *               ServerError:
  *                 $ref: '#/components/schemas/Error/examples/ServerError'
  */
-// ELIMINAT: GET /auth/me - funcționalitate complexă, nu necesară pentru frontend simplu
+// Reintrodus: GET /auth/me – returnează utilizatorul autentificat din access_token
+router.get('/me', auth_1.authenticateToken, (req, res) => {
+    if (!req.user) {
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
+    return res.json({ user: req.user });
+});
 /**
  * @swagger
  * /auth/logout:

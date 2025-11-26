@@ -159,7 +159,7 @@ router.get('/', (req, res) => categoryController.getAllCategories(req, res));
  *         required: true
  *         schema:
  *           type: string
- *         description: Slug-ul categoriei ("toate" nu este permis)
+ *         description: Slug-ul categoriei (valoarea toate nu este permisă)
  *     responses:
  *       200:
  *         description: Categoria găsită

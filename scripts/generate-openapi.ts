@@ -13,9 +13,10 @@ const swaggerSpec = swaggerJSDoc({
       version: config.swaggerVersion,
       description: 'API public. Autentificare prin cookie HTTP-Only; clientul trebuie să folosească credentials: \'include\'.',
     },
+    // Toate endpoint-urile sunt sub /api
     servers: config.swaggerServerUrl
-      ? [{ url: config.swaggerServerUrl }]
-      : [{ url: `http://localhost:${config.port}` }],
+      ? [{ url: `${config.swaggerServerUrl.replace(/\/$/, '')}/api` }]
+      : [{ url: `http://localhost:${config.port}/api` }],
     components: {}, 
   },
   apis: ['./src/routes/*.ts'],

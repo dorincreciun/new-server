@@ -18,7 +18,7 @@ export function authenticateToken(req: AuthenticatedRequest, res: Response, next
 
   if (!token) {
     return res.status(401).json({ 
-      error: 'Unauthorized'
+      message: 'Unauthorized'
     });
   }
 
@@ -28,7 +28,7 @@ export function authenticateToken(req: AuthenticatedRequest, res: Response, next
     next();
   } catch (error) {
     return res.status(401).json({ 
-      error: 'Unauthorized'
+      message: 'Unauthorized'
     });
   }
 }

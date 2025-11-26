@@ -58,7 +58,7 @@ class CategoryController {
     async getAllCategories(req, res) {
         try {
             const items = await categoryService.getAllCategories();
-            res.status(200).json({ items });
+            res.status(200).json({ success: true, data: items });
         }
         catch (error) {
             console.error('Eroare la obținerea categoriilor:', error);

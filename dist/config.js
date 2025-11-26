@@ -11,7 +11,7 @@ const envPath = process.env.NODE_ENV === 'test' ? '.env.test' : '.env';
 dotenv_1.default.config({ path: envPath });
 function resolveJwtAccessSecret() {
     const isProd = process.env.NODE_ENV === 'production';
-    const fromEnv = process.env.JWT_ACCESS_SECRET;
+    const fromEnv = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET; // fallback pentru compatibilitate .env vechi
     if (fromEnv)
         return fromEnv;
     if (!isProd) {
@@ -21,7 +21,7 @@ function resolveJwtAccessSecret() {
 }
 function resolveJwtRefreshSecret() {
     const isProd = process.env.NODE_ENV === 'production';
-    const fromEnv = process.env.JWT_REFRESH_SECRET;
+    const fromEnv = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET; // fallback pentru compatibilitate .env vechi
     if (fromEnv)
         return fromEnv;
     if (!isProd) {

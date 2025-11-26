@@ -15,6 +15,37 @@ exports.cartRoutes = router;
  */
 /**
  * @swagger
+ * components:
+ *   schemas:
+ *     DoughType:
+ *       type: object
+ *       description: Tip de aluat pentru varianta de produs
+ *       properties:
+ *         id:
+ *           type: integer
+ *           example: 2
+ *         key:
+ *           type: string
+ *           example: subtire
+ *         label:
+ *           type: string
+ *           example: Aluat Subțire
+ *     SizeOption:
+ *       type: object
+ *       description: Opțiune de mărime pentru varianta de produs
+ *       properties:
+ *         id:
+ *           type: integer
+ *           example: 3
+ *         key:
+ *           type: string
+ *           example: mare
+ *         label:
+ *           type: string
+ *           example: Mare (35cm)
+ */
+/**
+ * @swagger
  * /cart:
  *   get:
  *     summary: Obține coșul curent al utilizatorului

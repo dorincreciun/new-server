@@ -110,10 +110,8 @@ export declare class AuthController {
      * @swagger
      * /api/auth/me:
      *   get:
-     *     summary: Obține informațiile utilizatorului autentificat
+     *     summary: Obține informațiile utilizatorului autentificat (necesită autentificare prin cookie)
      *     tags: [Autentificare]
-     *     security:
-     *       - bearerAuth: []
      *     responses:
      *       200:
      *         description: Informații utilizator
@@ -143,8 +141,6 @@ export declare class AuthController {
      *   post:
      *     summary: Deconectează utilizatorul (client-side logout)
      *     tags: [Autentificare]
-     *     security:
-     *       - bearerAuth: []
      *     responses:
      *       200:
      *         description: Deconectare reușită

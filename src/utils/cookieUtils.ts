@@ -19,24 +19,26 @@ export function readRefreshToken(req: Request): string | null {
  * Setează cookie-urile pentru access și refresh token
  */
 export function setAuthCookies(res: Response, accessToken: string, refreshToken: string): void {
+  const isLocalhost = !config.cookieDomain || config.cookieDomain === 'localhost' || /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(config.cookieDomain);
+
   // Access token cookie - path: "/"
   res.cookie('access_token', accessToken, {
     httpOnly: true,
-    secure: config.cookieSecure,
+    secure: config.cookieSameSite === 'none' ? true : config.cookieSecure, // SameSite=None necesită Secure
     sameSite: config.cookieSameSite,
     maxAge: config.accessTokenTtlSeconds * 1000,
-    domain: config.cookieDomain,
-    path: '/'
+    ...(isLocalhost ? {} : { domain: config.cookieDomain }),
+    path: '/',
   });
 
-  // Refresh token cookie - path: "/auth"
+  // Refresh token cookie - path: "/api/auth" (aliniat cu noile rute)
   res.cookie('refresh_token', refreshToken, {
     httpOnly: true,
-    secure: config.cookieSecure,
+    secure: config.cookieSameSite === 'none' ? true : config.cookieSecure,
     sameSite: config.cookieSameSite,
     maxAge: config.refreshTokenTtlSeconds * 1000,
-    domain: config.cookieDomain,
-    path: '/auth'
+    ...(isLocalhost ? {} : { domain: config.cookieDomain }),
+    path: '/api/auth',
   });
 }
 
@@ -44,23 +46,24 @@ export function setAuthCookies(res: Response, accessToken: string, refreshToken:
  * Șterge cookie-urile de autentificare
  */
 export function clearAuthCookies(res: Response): void {
+  const isLocalhost = !config.cookieDomain || config.cookieDomain === 'localhost' || /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(config.cookieDomain);
   // Clear access token cookie
   res.cookie('access_token', '', {
     httpOnly: true,
-    secure: config.cookieSecure,
+    secure: config.cookieSameSite === 'none' ? true : config.cookieSecure,
     sameSite: config.cookieSameSite,
     maxAge: 0,
-    domain: config.cookieDomain,
+    ...(isLocalhost ? {} : { domain: config.cookieDomain }),
     path: '/'
   });
 
-  // Clear refresh token cookie
+  // Clear refresh token cookie (calea /api/auth)
   res.cookie('refresh_token', '', {
     httpOnly: true,
-    secure: config.cookieSecure,
+    secure: config.cookieSameSite === 'none' ? true : config.cookieSecure,
     sameSite: config.cookieSameSite,
     maxAge: 0,
-    domain: config.cookieDomain,
-    path: '/auth'
+    ...(isLocalhost ? {} : { domain: config.cookieDomain }),
+    path: '/api/auth'
   });
 }
