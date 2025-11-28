@@ -295,9 +295,57 @@ router.post('/login', async (req: Request, res: Response) => {
   }
 });
 
-// ELIMINAT: POST /auth/refresh - funcționalitate complexă, nu necesară pentru frontend simplu
-// ELIMINAT: POST /auth/refresh - funcționalitate complexă, nu necesară pentru frontend simplu
-
+/**
+ * @swagger
+ * /auth/refresh:
+ *   post:
+ *     summary: Reîmprospătează access token-ul folosind refresh token-ul din cookie
+ *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: Token nou generat
+ *         headers:
+ *           Set-Cookie:
+ *             $ref: '#/components/headers/SetCookieHeader'
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuthResponse'
+ *       401:
+ *         description: Refresh token lipsă sau invalid
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             examples:
+ *               Unauthorized:
+ *                 $ref: '#/components/schemas/Error/examples/Unauthorized'
+ *       500:
+ *         description: Eroare internă a serverului
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             examples:
+ *               ServerError:
+ *                 $ref: '#/components/schemas/Error/examples/ServerError'
+ */
+router.post('/refresh', async (req: Request, res: Response) => {
+  const refreshToken = readRefreshToken(req);
+  if (!refreshToken) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+  try {
+    const userAgent = req.get('user-agent') ?? undefined;
+    const ipAddress = req.ip;
+    const result = await authService.rotateRefreshToken(refreshToken, userAgent, ipAddress);
+    setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken);
+    res.json({ user: result.user });
+  } catch (error) {
+    console.error('Refresh error:', error);
+    res.status(401).json({ message: 'Unauthorized' });
+  }
+});
 
 /**
  * @swagger

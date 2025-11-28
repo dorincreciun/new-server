@@ -31,14 +31,14 @@ export function setAuthCookies(res: Response, accessToken: string, refreshToken:
     path: '/',
   });
 
-  // Refresh token cookie - path: "/api/auth" (aliniat cu noile rute)
+  // Refresh token cookie - path: "/" pentru a funcționa pe /api/auth și /auth
   res.cookie('refresh_token', refreshToken, {
     httpOnly: true,
     secure: config.cookieSameSite === 'none' ? true : config.cookieSecure,
     sameSite: config.cookieSameSite,
     maxAge: config.refreshTokenTtlSeconds * 1000,
     ...(isLocalhost ? {} : { domain: config.cookieDomain }),
-    path: '/api/auth',
+    path: '/',
   });
 }
 
@@ -57,13 +57,13 @@ export function clearAuthCookies(res: Response): void {
     path: '/'
   });
 
-  // Clear refresh token cookie (calea /api/auth)
+  // Clear refresh token cookie (calea /)
   res.cookie('refresh_token', '', {
     httpOnly: true,
     secure: config.cookieSameSite === 'none' ? true : config.cookieSecure,
     sameSite: config.cookieSameSite,
     maxAge: 0,
     ...(isLocalhost ? {} : { domain: config.cookieDomain }),
-    path: '/api/auth'
+    path: '/'
   });
 }

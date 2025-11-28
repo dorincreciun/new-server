@@ -31,14 +31,14 @@ function setAuthCookies(res, accessToken, refreshToken) {
         ...(isLocalhost ? {} : { domain: config_1.config.cookieDomain }),
         path: '/',
     });
-    // Refresh token cookie - path: "/api/auth" (aliniat cu noile rute)
+    // Refresh token cookie - path: "/" pentru a funcționa pe /api/auth și /auth
     res.cookie('refresh_token', refreshToken, {
         httpOnly: true,
         secure: config_1.config.cookieSameSite === 'none' ? true : config_1.config.cookieSecure,
         sameSite: config_1.config.cookieSameSite,
         maxAge: config_1.config.refreshTokenTtlSeconds * 1000,
         ...(isLocalhost ? {} : { domain: config_1.config.cookieDomain }),
-        path: '/api/auth',
+        path: '/',
     });
 }
 /**
@@ -55,14 +55,14 @@ function clearAuthCookies(res) {
         ...(isLocalhost ? {} : { domain: config_1.config.cookieDomain }),
         path: '/'
     });
-    // Clear refresh token cookie (calea /api/auth)
+    // Clear refresh token cookie (calea /)
     res.cookie('refresh_token', '', {
         httpOnly: true,
         secure: config_1.config.cookieSameSite === 'none' ? true : config_1.config.cookieSecure,
         sameSite: config_1.config.cookieSameSite,
         maxAge: 0,
         ...(isLocalhost ? {} : { domain: config_1.config.cookieDomain }),
-        path: '/api/auth'
+        path: '/'
     });
 }
 //# sourceMappingURL=cookieUtils.js.map
