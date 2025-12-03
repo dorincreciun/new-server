@@ -5,6 +5,32 @@ const authService_1 = require("../services/authService");
 const cookieUtils_1 = require("../utils/cookieUtils");
 const auth_1 = require("../middleware/auth");
 const router = (0, express_1.Router)();
+function respondWithUser(res, status, message, user) {
+    const payload = { message, user };
+    res.status(status).json(payload);
+}
+function validatePassword(password) {
+    const errors = [];
+    if (password.length < 8) {
+        errors.push('Parola trebuie să aibă cel puțin 8 caractere');
+    }
+    if (!/[a-z]/.test(password)) {
+        errors.push('Parola trebuie să conțină cel puțin o literă mică');
+    }
+    if (!/[A-Z]/.test(password)) {
+        errors.push('Parola trebuie să conțină cel puțin o literă mare');
+    }
+    if (!/[0-9]/.test(password)) {
+        errors.push('Parola trebuie să conțină cel puțin o cifră');
+    }
+    if (!/[!@#$%^&*()[\]{}\-_=+;:'",.<>/?\\|`~]/.test(password)) {
+        errors.push('Parola trebuie să conțină cel puțin un caracter special (ex: !,@,#,?)');
+    }
+    if (/\s/.test(password)) {
+        errors.push('Parola nu trebuie să conțină spații');
+    }
+    return errors;
+}
 /**
  * @swagger
  * components:
@@ -25,11 +51,16 @@ const router = (0, express_1.Router)();
  *           example: Ion Popescu
  *     AuthResponse:
  *       type: object
+ *       required: [message, user]
  *       properties:
+ *         message:
+ *           type: string
+ *           example: Autentificare reușită
  *         user:
  *           $ref: '#/components/schemas/UserDTO'
  *     LogoutResponse:
  *       type: object
+ *       required: [message]
  *       properties:
  *         message:
  *           type: string
@@ -64,9 +95,19 @@ const router = (0, express_1.Router)();
  *         password: secret123
  *     Error:
  *       type: object
+ *       required: [message]
  *       properties:
  *         message:
  *           type: string
+ *         details:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               field:
+ *                 type: string
+ *               message:
+ *                 type: string
  *       examples:
  *         MissingCredentials:
  *           summary: Lipsesc credențiale
@@ -174,15 +215,17 @@ router.post('/register', async (req, res) => {
         if (!emailRegex.test(normalizedEmail)) {
             return res.status(400).json({ message: 'Adresa de email este invalidă' });
         }
-        if (password.length < 6) {
-            return res.status(400).json({ message: 'Parola trebuie să aibă cel puțin 6 caractere' });
+        const passwordErrors = validatePassword(password);
+        if (passwordErrors.length > 0) {
+            return res.status(400).json({
+                message: 'Parola nu îndeplinește cerințele de securitate',
+                details: passwordErrors.map((msg) => ({ field: 'password', message: msg })),
+            });
         }
         const result = await authService_1.authService.register({ email: normalizedEmail, password, name: name ?? "" });
         // Setează cookie-urile
         (0, cookieUtils_1.setAuthCookies)(res, result.tokens.accessToken, result.tokens.refreshToken);
-        res.status(201).json({
-            user: result.user
-        });
+        respondWithUser(res, 201, 'Utilizator creat și autentificat', result.user);
     }
     catch (error) {
         if (error.message === 'Contul cu acest email există deja' || error.message === 'Email already exists') {
@@ -268,9 +311,7 @@ router.post('/login', async (req, res) => {
         const result = await authService_1.authService.login({ email: normalizedEmail, password });
         // Setează cookie-urile
         (0, cookieUtils_1.setAuthCookies)(res, result.tokens.accessToken, result.tokens.refreshToken);
-        res.json({
-            user: result.user
-        });
+        respondWithUser(res, 200, 'Autentificare reușită', result.user);
     }
     catch (error) {
         if (error.message === 'Parola incorectă') {
@@ -328,7 +369,7 @@ router.post('/refresh', async (req, res) => {
         const ipAddress = req.ip;
         const result = await authService_1.authService.rotateRefreshToken(refreshToken, userAgent, ipAddress);
         (0, cookieUtils_1.setAuthCookies)(res, result.tokens.accessToken, result.tokens.refreshToken);
-        res.json({ user: result.user });
+        respondWithUser(res, 200, 'Token reîmprospătat', result.user);
     }
     catch (error) {
         console.error('Refresh error:', error);
@@ -379,7 +420,7 @@ router.get('/me', auth_1.authenticateToken, (req, res) => {
     if (!req.user) {
         return res.status(401).json({ message: 'Unauthorized' });
     }
-    return res.json({ user: req.user });
+    respondWithUser(res, 200, 'Utilizator autentificat', req.user);
 });
 /**
  * @swagger

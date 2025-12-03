@@ -1,9 +1,44 @@
 import { Router, Request, Response } from 'express';
-import { authService } from '../services/authService';
+import { authService, UserPayload } from '../services/authService';
 import { setAuthCookies, clearAuthCookies, readRefreshToken } from '../utils/cookieUtils';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 
 const router = Router();
+
+type AuthSuccessResponse = {
+  message: string;
+  user: UserPayload;
+};
+
+function respondWithUser(res: Response, status: number, message: string, user: UserPayload): void {
+  const payload: AuthSuccessResponse = { message, user };
+  res.status(status).json(payload);
+}
+
+function validatePassword(password: string): string[] {
+  const errors: string[] = [];
+
+  if (password.length < 8) {
+    errors.push('Parola trebuie să aibă cel puțin 8 caractere');
+  }
+  if (!/[a-z]/.test(password)) {
+    errors.push('Parola trebuie să conțină cel puțin o literă mică');
+  }
+  if (!/[A-Z]/.test(password)) {
+    errors.push('Parola trebuie să conțină cel puțin o literă mare');
+  }
+  if (!/[0-9]/.test(password)) {
+    errors.push('Parola trebuie să conțină cel puțin o cifră');
+  }
+  if (!/[!@#$%^&*()[\]{}\-_=+;:'",.<>/?\\|`~]/.test(password)) {
+    errors.push('Parola trebuie să conțină cel puțin un caracter special (ex: !,@,#,?)');
+  }
+  if (/\s/.test(password)) {
+    errors.push('Parola nu trebuie să conțină spații');
+  }
+
+  return errors;
+}
 
 /**
  * @swagger
@@ -25,11 +60,16 @@ const router = Router();
  *           example: Ion Popescu
  *     AuthResponse:
  *       type: object
+ *       required: [message, user]
  *       properties:
+ *         message:
+ *           type: string
+ *           example: Autentificare reușită
  *         user:
  *           $ref: '#/components/schemas/UserDTO'
  *     LogoutResponse:
  *       type: object
+ *       required: [message]
  *       properties:
  *         message:
  *           type: string
@@ -64,9 +104,19 @@ const router = Router();
  *         password: secret123
  *     Error:
  *       type: object
+ *       required: [message]
  *       properties:
  *         message:
  *           type: string
+ *         details:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               field:
+ *                 type: string
+ *               message:
+ *                 type: string
  *       examples:
  *         MissingCredentials:
  *           summary: Lipsesc credențiale
@@ -178,8 +228,12 @@ router.post('/register', async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Adresa de email este invalidă' });
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({ message: 'Parola trebuie să aibă cel puțin 6 caractere' });
+    const passwordErrors = validatePassword(password);
+    if (passwordErrors.length > 0) {
+      return res.status(400).json({
+        message: 'Parola nu îndeplinește cerințele de securitate',
+        details: passwordErrors.map((msg) => ({ field: 'password', message: msg })),
+      });
     }
 
     const result = await authService.register({ email: normalizedEmail, password, name: name ?? "" });
@@ -187,9 +241,7 @@ router.post('/register', async (req: Request, res: Response) => {
     // Setează cookie-urile
     setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken);
 
-    res.status(201).json({
-      user: result.user
-    });
+    respondWithUser(res, 201, 'Utilizator creat și autentificat', result.user);
   } catch (error: any) {
     if (error.message === 'Contul cu acest email există deja' || error.message === 'Email already exists') {
       return res.status(400).json({ message: 'Acest cont a fost deja înregistrat' });
@@ -280,9 +332,7 @@ router.post('/login', async (req: Request, res: Response) => {
     // Setează cookie-urile
     setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken);
 
-    res.json({
-      user: result.user
-    });
+    respondWithUser(res, 200, 'Autentificare reușită', result.user);
   } catch (error: any) {
     if (error.message === 'Parola incorectă') {
       return res.status(401).json({ message: 'Parola incorectă' });
@@ -340,7 +390,7 @@ router.post('/refresh', async (req: Request, res: Response) => {
     const ipAddress = req.ip;
     const result = await authService.rotateRefreshToken(refreshToken, userAgent, ipAddress);
     setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken);
-    res.json({ user: result.user });
+    respondWithUser(res, 200, 'Token reîmprospătat', result.user);
   } catch (error) {
     console.error('Refresh error:', error);
     res.status(401).json({ message: 'Unauthorized' });
@@ -391,7 +441,7 @@ router.get('/me', authenticateToken, (req: AuthenticatedRequest, res: Response) 
   if (!req.user) {
     return res.status(401).json({ message: 'Unauthorized' });
   }
-  return res.json({ user: req.user });
+  respondWithUser(res, 200, 'Utilizator autentificat', req.user);
 });
 
 /**

@@ -25,11 +25,19 @@ components:
           example: Ion Popescu
     AuthResponse:
       type: object
+      required:
+        - message
+        - user
       properties:
+        message:
+          type: string
+          example: Autentificare reușită
         user:
           $ref: '#/components/schemas/UserDTO'
     LogoutResponse:
       type: object
+      required:
+        - message
       properties:
         message:
           type: string
@@ -68,9 +76,20 @@ components:
         password: secret123
     Error:
       type: object
+      required:
+        - message
       properties:
         message:
           type: string
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
       examples:
         MissingCredentials:
           summary: Lipsesc credențiale
