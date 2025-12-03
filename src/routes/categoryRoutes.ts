@@ -19,29 +19,23 @@ const categoryController = new CategoryController();
  *         id:
  *           type: integer
  *           description: ID-ul unic al categoriei
- *           example: 1
  *         slug:
  *           type: string
  *           description: Identificator URL-friendly al categoriei
- *           example: "carne"
  *         name:
  *           type: string
  *           description: Numele categoriei
- *           example: "Carne"
  *         description:
  *           type: string
  *           description: Descrierea categoriei
- *           example: "Produse din carne de porc, vită, pui"
  *         createdAt:
  *           type: string
  *           format: date-time
  *           description: Data și ora creării
- *           example: "2024-01-15T10:30:00Z"
  *         updatedAt:
  *           type: string
  *           format: date-time
  *           description: Data și ora ultimei actualizări
- *           example: "2024-01-15T10:30:00Z"
  *     
  *     CreateCategoryRequest:
  *       type: object
@@ -51,11 +45,9 @@ const categoryController = new CategoryController();
  *         name:
  *           type: string
  *           description: Numele categoriei
- *           example: "Carne"
  *         description:
  *           type: string
  *           description: Descrierea categoriei
- *           example: "Produse din carne de porc, vită, pui"
  *     
  *     UpdateCategoryRequest:
  *       type: object
@@ -63,18 +55,15 @@ const categoryController = new CategoryController();
  *         name:
  *           type: string
  *           description: Numele categoriei
- *           example: "Carne și mezeluri"
  *         description:
  *           type: string
  *           description: Descrierea categoriei
- *           example: "Produse din carne și mezeluri"
  *     
  *     CategoryResponse:
  *       type: object
  *       properties:
  *         message:
  *           type: string
- *           example: "Categoria a fost creată cu succes"
  *         data:
  *           $ref: '#/components/schemas/Category'
  *     
@@ -83,34 +72,29 @@ const categoryController = new CategoryController();
  *       properties:
  *         message:
  *           type: string
- *           example: "Categoriile au fost obținute cu succes"
  *         data:
  *           type: array
  *           items:
  *             $ref: '#/components/schemas/Category'
  *         count:
  *           type: integer
- *           example: 5
  *     
  *     CategoryStatsResponse:
  *       type: object
  *       properties:
  *         message:
  *           type: string
- *           example: "Statisticile categoriilor au fost obținute cu succes"
  *         data:
  *           type: object
  *           properties:
  *             totalCategories:
  *               type: integer
- *               example: 10
  *     
  *     ErrorResponse:
  *       type: object
  *       properties:
  *         error:
  *           type: string
- *           example: "Eroare de validare"
  */
 
 // ELIMINAT: POST /categories - funcționalitate administrativă
@@ -121,7 +105,8 @@ const categoryController = new CategoryController();
  *   get:
  *     summary: Obține toate categoriile
  *     description: Returnează o listă cu toate categoriile din sistem, sortate alfabetic după nume.
- *     tags: [Categories]
+ *     tags:
+ *       - Categories
  *     responses:
  *       200:
  *         description: Lista cu toate categoriile
@@ -140,11 +125,6 @@ const categoryController = new CategoryController();
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
- *             examples:
- *               ServerError:
- *                 summary: Eroare server
- *                 value:
- *                   error: "Eroare internă a serverului"
  */
 router.get('/', (req, res) => categoryController.getAllCategories(req, res));
 /**
@@ -152,7 +132,8 @@ router.get('/', (req, res) => categoryController.getAllCategories(req, res));
  * /categories/{slug}:
  *   get:
  *     summary: Obține o categorie după slug
- *     tags: [Categories]
+ *     tags:
+ *       - Categories
  *     parameters:
  *       - in: path
  *         name: slug

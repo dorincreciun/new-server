@@ -16,23 +16,18 @@ const productController = new ProductController();
  *       properties:
  *         id:
  *           type: integer
- *           example: 1
  *         slug:
  *           type: string
- *           example: "carne"
  *         name:
  *           type: string
- *           example: "Carne"
  *         description:
  *           type: string
- *           example: "Produse din carne"
  *         createdAt:
  *           type: string
  *           format: date-time
  *         updatedAt:
  *           type: string
  *           format: date-time
- *     
  *     Product:
  *       type: object
  *       required:
@@ -43,41 +38,31 @@ const productController = new ProductController();
  *         id:
  *           type: integer
  *           description: ID-ul unic al produsului
- *           example: 1
  *         name:
  *           type: string
  *           description: Numele produsului
- *           example: "Carne de porc"
  *         description:
  *           type: string
  *           description: Descrierea produsului
- *           example: "Carne de porc proaspătă"
  *         price:
  *           type: number
- *           format: decimal
  *           description: Prețul produsului
- *           example: 25.50
  *         stock:
  *           type: integer
  *           description: Cantitatea în stoc
- *           example: 100
  *         categoryId:
  *           type: integer
  *           description: ID-ul categoriei
- *           example: 1
  *         createdAt:
  *           type: string
  *           format: date-time
  *           description: Data și ora creării
- *           example: "2024-01-15T10:30:00Z"
  *         updatedAt:
  *           type: string
  *           format: date-time
  *           description: Data și ora ultimei actualizări
- *           example: "2024-01-15T10:30:00Z"
  *         category:
  *           $ref: '#/components/schemas/Category'
- *     
  *     CreateProductRequest:
  *       type: object
  *       required:
@@ -88,50 +73,36 @@ const productController = new ProductController();
  *         name:
  *           type: string
  *           description: Numele produsului
- *           example: "Carne de porc"
  *         description:
  *           type: string
  *           description: Descrierea produsului
- *           example: "Carne de porc proaspătă"
  *         price:
  *           type: number
- *           format: decimal
  *           description: Prețul produsului
- *           example: 25.50
  *         stock:
  *           type: integer
  *           description: Cantitatea în stoc
- *           example: 100
  *         categoryId:
  *           type: integer
  *           description: ID-ul categoriei
- *           example: 1
- *     
  *     UpdateProductRequest:
  *       type: object
  *       properties:
  *         name:
  *           type: string
  *           description: Numele produsului
- *           example: "Carne de porc premium"
  *         description:
  *           type: string
  *           description: Descrierea produsului
- *           example: "Carne de porc premium proaspătă"
  *         price:
  *           type: number
- *           format: decimal
  *           description: Prețul produsului
- *           example: 30.00
  *         stock:
  *           type: integer
  *           description: Cantitatea în stoc
- *           example: 150
  *         categoryId:
  *           type: integer
  *           description: ID-ul categoriei
- *           example: 1
- *     
  *     UpdateStockRequest:
  *       type: object
  *       required:
@@ -140,60 +111,52 @@ const productController = new ProductController();
  *         stock:
  *           type: integer
  *           description: Noua cantitate în stoc
- *           example: 200
- *     
  *     ProductResponse:
  *       type: object
  *       properties:
  *         message:
  *           type: string
- *           example: "Produsul a fost creat cu succes"
  *         data:
  *           $ref: '#/components/schemas/Product'
- *     
  *     ProductListResponse:
  *       type: object
  *       properties:
  *         message:
  *           type: string
- *           example: "Produsele au fost obținute cu succes"
  *         data:
  *           type: array
  *           items:
  *             $ref: '#/components/schemas/Product'
  *         count:
  *           type: integer
- *           example: 10
- *     
  *     ProductStatsResponse:
  *       type: object
  *       properties:
  *         message:
  *           type: string
- *           example: "Statisticile produselor au fost obținute cu succes"
  *         data:
  *           type: object
  *           properties:
  *             totalProducts:
  *               type: integer
- *               example: 50
- *     
  *     LowStockResponse:
  *       type: object
  *       properties:
  *         message:
  *           type: string
- *           example: "Produsele cu stoc scăzut au fost obținute cu succes"
  *         data:
  *           type: array
  *           items:
  *             $ref: '#/components/schemas/Product'
  *         count:
  *           type: integer
- *           example: 5
  *         threshold:
  *           type: integer
- *           example: 10
+ *     ErrorResponse:
+ *       type: object
+ *       properties:
+ *         error:
+ *           type: string
  */
 
 // ELIMINAT: POST /products - funcționalitate administrativă
@@ -202,28 +165,9 @@ const productController = new ProductController();
  * @swagger
  * /products:
  *   get:
- *     summary: Obține toate produsele
- *     tags: [Products]
- *     responses:
- *       200:
- *         description: Lista cu toate produsele
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ProductListResponse'
- *       500:
- *         description: Eroare internă a serverului
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- */
-/**
- * @swagger
- * /products:
- *   get:
  *     summary: Obține toate produsele (endpoint simplu)
- *     tags: [Products]
+ *     tags:
+ *       - Products
  *     description: Returnează toate produsele fără filtrare avansată. Pentru filtrare complexă, folosește /browse/products.
  *     responses:
  *       200:
@@ -244,7 +188,8 @@ router.get('/', (req, res) => productController.getAllProducts(req, res));
  * /products/facets/{slug}:
  *   get:
  *     summary: Obține valorile posibile (facets) pentru filtrele unei categorii (după slug)
- *     tags: [Products]
+ *     tags:
+ *       - Products
  *     description: Returnează colecțiile pentru filtre precum flags, ingredients, doughTypes, sizeOptions și intervalul de preț pentru categoria indicată prin slug.
  *     parameters:
  *       - in: path
@@ -291,7 +236,8 @@ router.get('/facets/:slug', (req, res) => productController.getFacetsByCategoryS
  * /products/{id}:
  *   get:
  *     summary: Obține un produs după ID
- *     tags: [Products]
+ *     tags:
+ *       - Products
  *     parameters:
  *       - in: path
  *         name: id
@@ -299,7 +245,6 @@ router.get('/facets/:slug', (req, res) => productController.getFacetsByCategoryS
  *         schema:
  *           type: integer
  *         description: ID-ul produsului
- *         example: 1
  *     responses:
  *       200:
  *         description: Produsul a fost găsit

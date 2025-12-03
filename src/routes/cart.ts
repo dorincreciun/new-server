@@ -22,26 +22,20 @@ const router = Router();
  *       properties:
  *         id:
  *           type: integer
- *           example: 2
  *         key:
  *           type: string
- *           example: subtire
  *         label:
  *           type: string
- *           example: Aluat Subțire
  *     SizeOption:
  *       type: object
  *       description: Opțiune de mărime pentru varianta de produs
  *       properties:
  *         id:
  *           type: integer
- *           example: 3
  *         key:
  *           type: string
- *           example: mare
  *         label:
  *           type: string
- *           example: Mare (35cm)
  */
 
 /**
@@ -49,7 +43,8 @@ const router = Router();
  * /cart:
  *   get:
  *     summary: Obține coșul curent al utilizatorului
- *     tags: [Cart]
+ *     tags:
+ *       - Cart
  *     responses:
  *       200:
  *         description: OK
@@ -65,7 +60,8 @@ router.get('/', authenticateToken, async (req: AuthenticatedRequest, res: Respon
  * /cart/items:
  *   post:
  *     summary: Adaugă o variantă de produs în coș (sau crește cantitatea dacă există)
- *     tags: [Cart]
+ *     tags:
+ *       - Cart
  */
 router.post('/items', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   const userId = req.user!.id;
@@ -96,7 +92,8 @@ router.post('/items', authenticateToken, async (req: AuthenticatedRequest, res: 
  * /cart/items/{itemId}:
  *   patch:
  *     summary: Actualizează cantitatea unui item din coș
- *     tags: [Cart]
+ *     tags:
+ *       - Cart
  */
 router.patch('/items/:itemId', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   const userId = req.user!.id;
@@ -127,7 +124,8 @@ router.patch('/items/:itemId', authenticateToken, async (req: AuthenticatedReque
  * /cart/items/{itemId}:
  *   delete:
  *     summary: Elimină un item din coș
- *     tags: [Cart]
+ *     tags:
+ *       - Cart
  */
 router.delete('/items/:itemId', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   const userId = req.user!.id;
@@ -148,7 +146,8 @@ router.delete('/items/:itemId', authenticateToken, async (req: AuthenticatedRequ
  * /cart:
  *   delete:
  *     summary: Golește coșul utilizatorului
- *     tags: [Cart]
+ *     tags:
+ *       - Cart
  */
 router.delete('/', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   const userId = req.user!.id;

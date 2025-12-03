@@ -14,7 +14,8 @@ const router = Router();
  * /taxonomies/ingredients:
  *   get:
  *     summary: Listează ingredientele disponibile
- *     tags: [Taxonomies]
+ *     tags:
+ *       - Taxonomies
  *     description: Returnează lista cu toate ingredientele disponibile pentru pizza
  *     responses:
  *       200:
@@ -71,7 +72,8 @@ router.get('/ingredients', (req, res) => {
  * /taxonomies/flags:
  *   get:
  *     summary: Listează flagurile disponibile
- *     tags: [Taxonomies]
+ *     tags:
+ *       - Taxonomies
  *     description: Returnează lista cu toate flagurile disponibile pentru filtrare
  *     responses:
  *       200:
@@ -116,7 +118,8 @@ router.get('/flags', (req, res) => {
  * /taxonomies/dough-types:
  *   get:
  *     summary: Listează tipurile de aluat disponibile
- *     tags: [Taxonomies]
+ *     tags:
+ *       - Taxonomies
  *     description: Returnează lista cu toate tipurile de aluat disponibile
  *     responses:
  *       200:
@@ -158,7 +161,8 @@ router.get('/dough-types', (req, res) => {
  * /taxonomies/size-options:
  *   get:
  *     summary: Listează opțiunile de mărime disponibile
- *     tags: [Taxonomies]
+ *     tags:
+ *       - Taxonomies
  *     description: Returnează lista cu toate mărimile disponibile pentru pizza
  *     responses:
  *       200:
