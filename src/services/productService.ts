@@ -4,10 +4,11 @@ const prisma = new PrismaClient();
 
 export interface CreateProductData {
   name: string;
-  description?: string;
-  basePrice: number;
-  stock?: number;
-  categoryId: number;
+  description?: string | undefined;
+    basePrice: number;
+    stock?: number | undefined;
+    categoryId: number;
+    imageUrl?: string | null | undefined;
 }
 
 export interface UpdateProductData {
@@ -16,6 +17,7 @@ export interface UpdateProductData {
   basePrice?: number;
   stock?: number;
   categoryId?: number;
+  imageUrl?: string | null;
 }
 
 export interface ProductWithCategory extends Product {
@@ -391,7 +393,11 @@ export class ProductService {
     }
 
     if (search && search.trim()) {
-      andFilters.push({ name: { contains: search.trim() } });
+      const term = search.trim();
+      andFilters.push({ OR: [
+        { name: { contains: term } },
+        { description: { contains: term } }
+      ]});
     }
 
     if (flags && flags.length > 0) {
