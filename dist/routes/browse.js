@@ -124,68 +124,59 @@ const browseController = new browseController_1.BrowseController();
  *   get:
  *     summary: Filtrează și sortează produsele
  *     description: Endpoint principal pentru filtrarea produselor cu suport pentru toate tipurile de filtre
- *     tags: [Browse]
+ *     tags:
+ *       - Browse
  *     parameters:
  *       - in: query
  *         name: q
  *         schema:
  *           type: string
  *         description: Căutare full-text în nume și descriere
- *         example: "cheese"
  *       - in: query
  *         name: categorySlug
  *         schema:
  *           type: string
  *         description: Slug-ul categoriei
- *         example: "pizza"
  *       - in: query
  *         name: priceMin
  *         schema:
  *           type: number
  *         description: Prețul minim (filtrare pe minPrice)
- *         example: 200
  *       - in: query
  *         name: priceMax
  *         schema:
  *           type: number
  *         description: Prețul maxim (filtrare pe minPrice)
- *         example: 500
  *       - in: query
  *         name: flags
  *         schema:
  *           type: string
  *         description: Flaguri separate prin virgulă sau flags[]=a&flags[]=b
- *         example: "spicy,vegetarian"
  *       - in: query
  *         name: ingredients
  *         schema:
  *           type: string
  *         description: Ingrediente separate prin virgulă sau ingredients[]=a&ingredients[]=b
- *         example: "mozzarella,tomato"
  *       - in: query
  *         name: dough
  *         schema:
  *           type: string
  *         description: Tipul de aluat
- *         example: "thin"
  *       - in: query
  *         name: size
  *         schema:
  *           type: string
  *         description: Mărimea
- *         example: "30cm"
  *       - in: query
  *         name: isCustomizable
  *         schema:
  *           type: boolean
  *         description: Filtrează produsele care pot fi personalizate
- *         example: true
  *       - in: query
  *         name: isNew
  *         schema:
  *           type: boolean
  *         description: Filtrează produsele noi (releasedAt în ultimele newerThanDays zile)
- *         example: true
  *       - in: query
  *         name: newerThanDays
  *         schema:
@@ -228,25 +219,6 @@ const browseController = new browseController_1.BrowseController();
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/BrowseResponse'
- *             examples:
- *               Success:
- *                 summary: Produse filtrate cu succes
- *                 value:
- *                   message: "Produsele au fost filtrate cu succes"
- *                   data:
- *                     - id: 1
- *                       name: "Чизбургер-пицца"
- *                       price: 399
- *                       minPrice: 399
- *                       maxPrice: 499
- *                       flags: [{"key": "spicy", "label": "Picant"}]
- *                       ingredients: [{"key": "mozzarella", "label": "Mozzarella"}, {"key": "tomato", "label": "Roșii"}]
- *                       variants: [{"id": 1, "price": 399, "isDefault": true, "sizeOption": {"key": "30cm", "label": "30cm"}}]
- *                       category: {"id": 1, "slug": "pizza", "name": "Пиццы"}
- *                   pagination:
- *                     page: 1
- *                     limit: 10
- *                     total: 65
  *       422:
  *         description: Parametri invalizi
  *         content:
@@ -275,7 +247,8 @@ router.get('/products', (req, res) => browseController.getProducts(req, res));
  *   get:
  *     summary: Obține opțiunile de filtrare disponibile
  *     description: Returnează toate opțiunile de filtrare cu numărul de produse pentru fiecare. Fără categorySlug → filtre globale; cu categorySlug → filtre contextuale (ținând cont de ceilalți parametri).
- *     tags: [Browse]
+ *     tags:
+ *       - Browse
  *     parameters:
  *       - in: query
  *         name: q
@@ -287,7 +260,6 @@ router.get('/products', (req, res) => browseController.getProducts(req, res));
  *         schema:
  *           type: string
  *         description: Slug-ul categoriei pentru filtrare specifică
- *         example: "pizza"
  *       - in: query
  *         name: priceMin
  *         schema:

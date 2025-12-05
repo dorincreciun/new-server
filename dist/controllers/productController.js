@@ -9,7 +9,7 @@ class ProductController {
      */
     async createProduct(req, res) {
         try {
-            const { name, description, basePrice, stock, categoryId } = req.body;
+            const { name, description, basePrice, stock, categoryId, imageUrl } = req.body;
             // Validare input
             if (!name || typeof name !== 'string' || name.trim().length === 0) {
                 res.status(400).json({
@@ -37,12 +37,25 @@ class ProductController {
                 });
                 return;
             }
+            // Normalizează imaginea: string gol -> null; string valid -> trim; alt tip ignorat
+            let normalizedImage = undefined;
+            if (imageUrl !== undefined) {
+                if (imageUrl === null) {
+                    normalizedImage = null;
+                }
+                else if (typeof imageUrl === 'string') {
+                    const trimmed = imageUrl.trim();
+                    normalizedImage = trimmed.length > 0 ? trimmed : null;
+                }
+            }
+            const normalizedDescription = typeof description === 'string' ? (description.trim() || null) : null;
             const productData = {
                 name: name.trim(),
-                description: description?.trim() || undefined,
+                description: normalizedDescription,
                 basePrice,
                 stock: stock || 0,
                 categoryId,
+                imageUrl: normalizedImage ?? null,
             };
             const product = await productService.createProduct(productData);
             res.status(201).json({
@@ -63,7 +76,7 @@ class ProductController {
     async getFacetsByCategorySlug(req, res) {
         try {
             const slug = req.params.slug;
-            if (!slug || typeof slug !== 'string' || slug.trim().length === 0) {
+            if (!slug || slug.trim().length === 0) {
                 res.status(400).json({ error: 'Slug-ul categoriei este obligatoriu' });
                 return;
             }
@@ -144,6 +157,66 @@ class ProductController {
         }
     }
     /**
+     * Caută produse după text (search) cu paginare și sortare
+     * Parametri acceptați (query):
+     * - q: string (obligatoriu) — termenul de căutare
+     * - categorySlug: string (opțional) — filtrează după categorie
+     * - priceMin, priceMax: number (opțional) — filtrează după interval de preț (pe maxPrice/minPrice)
+     * - sort: "price" | "createdAt" | "popularity" (implicit: createdAt)
+     * - order: "asc" | "desc" (implicit: desc)
+     * - page: number (implicit: 1)
+     * - limit: number (implicit: 12; max: 100)
+     */
+    async searchProducts(req, res) {
+        try {
+            const qRaw = typeof req.query.q === 'string' ? req.query.q : '';
+            const q = qRaw.trim();
+            if (!q) {
+                res.status(400).json({ error: 'Parametrul q este obligatoriu pentru căutare' });
+                return;
+            }
+            const categorySlug = typeof req.query.categorySlug === 'string' ? req.query.categorySlug.trim() : undefined;
+            const priceMin = req.query.priceMin !== undefined ? Number(req.query.priceMin) : undefined;
+            const priceMax = req.query.priceMax !== undefined ? Number(req.query.priceMax) : undefined;
+            const page = req.query.page ? Math.max(Number(req.query.page), 1) : 1;
+            const limitRaw = req.query.limit ? Number(req.query.limit) : 12;
+            const limit = Math.min(Math.max(limitRaw, 1), 100);
+            const sortRaw = req.query.sort || 'createdAt';
+            const sortBy = ['price', 'createdAt', 'popularity'].includes(sortRaw) ? sortRaw : 'createdAt';
+            const orderRaw = req.query.order || 'desc';
+            const order = ['asc', 'desc'].includes(orderRaw) ? orderRaw : 'desc';
+            if (Number.isNaN(priceMin) || Number.isNaN(priceMax)) {
+                res.status(400).json({ error: 'Parametrii priceMin/priceMax trebuie să fie numerici' });
+                return;
+            }
+            const result = await productService.filterProductsPaginated({
+                categorySlug,
+                search: q,
+                priceMin: priceMin || undefined,
+                priceMax: priceMax || undefined,
+                page,
+                pageSize: limit,
+                sortBy,
+                order,
+            });
+            const totalPages = Math.ceil(result.total / result.pageSize) || 1;
+            res.status(200).json({
+                message: 'Căutarea produselor a fost efectuată cu succes',
+                data: result.items,
+                pagination: {
+                    page: result.page,
+                    limit: result.pageSize,
+                    total: result.total,
+                    totalPages,
+                },
+            });
+        }
+        catch (error) {
+            console.error('Eroare la căutarea produselor:', error);
+            res.status(500).json({ error: 'Eroare internă a serverului' });
+        }
+    }
+    /**
      * Obține toate produsele
      */
     async getAllProducts(req, res) {
@@ -194,7 +267,7 @@ class ProductController {
     async getProductsByCategoryName(req, res) {
         try {
             const categoryName = req.params.categoryName;
-            if (!categoryName || typeof categoryName !== 'string' || categoryName.trim().length === 0) {
+            if (!categoryName || categoryName.trim().length === 0) {
                 res.status(400).json({
                     error: 'Numele categoriei este obligatoriu și trebuie să fie un string non-gol',
                 });
@@ -220,7 +293,7 @@ class ProductController {
     async getProductsByCategorySlug(req, res) {
         try {
             const slug = req.params.slug;
-            if (!slug || typeof slug !== 'string' || slug.trim().length === 0) {
+            if (!slug || slug.trim().length === 0) {
                 res.status(400).json({
                     error: 'Slug-ul categoriei este obligatoriu și trebuie să fie un string non-gol',
                 });
@@ -274,29 +347,7 @@ class ProductController {
     /**
      * Caută produse după nume
      */
-    async searchProducts(req, res) {
-        try {
-            const { name } = req.query;
-            if (!name || typeof name !== 'string' || name.trim().length === 0) {
-                res.status(400).json({
-                    error: 'Parametrul de căutare "name" este obligatoriu',
-                });
-                return;
-            }
-            const products = await productService.searchProductsByName(name.trim());
-            res.status(200).json({
-                message: 'Căutarea produselor a fost efectuată cu succes',
-                data: products,
-                count: products.length,
-            });
-        }
-        catch (error) {
-            console.error('Eroare la căutarea produselor:', error);
-            res.status(500).json({
-                error: 'Eroare internă a serverului',
-            });
-        }
-    }
+    // Eliminat: metodă veche de căutare după nume (înlocuită de searchProducts cu suport pentru q, paginare și sortare)
     /**
      * Obține produsele cu stoc scăzut
      */
@@ -330,7 +381,7 @@ class ProductController {
     async updateProduct(req, res) {
         try {
             const id = parseInt(req.params.id || '0');
-            const { name, description, basePrice, stock, categoryId } = req.body;
+            const { name, description, basePrice, stock, categoryId, imageUrl } = req.body;
             if (isNaN(id) || id <= 0) {
                 res.status(400).json({
                     error: 'ID-ul produsului trebuie să fie un număr întreg pozitiv',
@@ -394,6 +445,19 @@ class ProductController {
                     return;
                 }
                 updateData.categoryId = categoryId;
+            }
+            if (imageUrl !== undefined) {
+                if (imageUrl === null) {
+                    updateData.imageUrl = null;
+                }
+                else if (typeof imageUrl === 'string') {
+                    const trimmed = imageUrl.trim();
+                    updateData.imageUrl = trimmed.length > 0 ? trimmed : null;
+                }
+                else {
+                    res.status(400).json({ error: 'imageUrl trebuie să fie string sau null' });
+                    return;
+                }
             }
             const updatedProduct = await productService.updateProduct(id, updateData);
             res.status(200).json({

@@ -9,6 +9,9 @@ function respondWithUser(res, status, message, user) {
     const payload = { message, user };
     res.status(status).json(payload);
 }
+function respondWithValidationErrors(res, status, details, message = 'Date invalide') {
+    return res.status(status).json({ message, details });
+}
 function validatePassword(password) {
     const errors = [];
     if (password.length < 8) {
@@ -31,43 +34,116 @@ function validatePassword(password) {
     }
     return errors;
 }
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+function validateRegisterPayload(body) {
+    const errors = [];
+    const payload = (typeof body === 'object' && body !== null ? body : {});
+    const rawEmail = typeof payload.email === 'string' ? payload.email.trim() : '';
+    const normalizedEmail = rawEmail.toLowerCase();
+    const password = typeof payload.password === 'string' ? payload.password : '';
+    const hasNameField = Object.prototype.hasOwnProperty.call(payload, 'name');
+    const rawName = typeof payload.name === 'string' ? payload.name.trim() : undefined;
+    if (!rawEmail) {
+        errors.push({ field: 'email', message: 'Emailul este obligatoriu' });
+    }
+    else if (!emailRegex.test(normalizedEmail)) {
+        errors.push({ field: 'email', message: 'Adresa de email este invalidă' });
+    }
+    if (!password) {
+        errors.push({ field: 'password', message: 'Parola este obligatorie' });
+    }
+    else {
+        const passwordErrors = validatePassword(password);
+        passwordErrors.forEach((msg) => errors.push({ field: 'password', message: msg }));
+    }
+    if (hasNameField) {
+        if (typeof payload.name !== 'string') {
+            errors.push({ field: 'name', message: 'Numele trebuie să fie un șir de caractere' });
+        }
+        else if (!rawName) {
+            errors.push({ field: 'name', message: 'Numele nu poate fi gol' });
+        }
+        else if (rawName.length > 120) {
+            errors.push({ field: 'name', message: 'Numele poate avea cel mult 120 de caractere' });
+        }
+    }
+    if (errors.length > 0) {
+        return { errors };
+    }
+    return {
+        data: {
+            email: normalizedEmail,
+            password,
+            ...(rawName ? { name: rawName } : {})
+        },
+        errors
+    };
+}
+function validateLoginPayload(body) {
+    const errors = [];
+    const payload = (typeof body === 'object' && body !== null ? body : {});
+    const rawEmail = typeof payload.email === 'string' ? payload.email.trim() : '';
+    const normalizedEmail = rawEmail.toLowerCase();
+    const password = typeof payload.password === 'string' ? payload.password : '';
+    if (!rawEmail) {
+        errors.push({ field: 'email', message: 'Emailul este obligatoriu' });
+    }
+    else if (!emailRegex.test(normalizedEmail)) {
+        errors.push({ field: 'email', message: 'Adresa de email este invalidă' });
+    }
+    if (!password) {
+        errors.push({ field: 'password', message: 'Parola este obligatorie' });
+    }
+    if (errors.length > 0) {
+        return { errors };
+    }
+    return {
+        data: {
+            email: normalizedEmail,
+            password
+        },
+        errors
+    };
+}
 /**
  * @swagger
  * components:
  *   schemas:
  *     UserDTO:
  *       type: object
- *       required: [id, email]
+ *       required:
+ *         - id
+ *         - email
  *       properties:
  *         id:
  *           type: integer
- *           example: 1
  *         email:
  *           type: string
  *           format: email
- *           example: user@example.com
  *         name:
  *           type: string
- *           example: Ion Popescu
  *     AuthResponse:
  *       type: object
- *       required: [message, user]
+ *       required:
+ *         - message
+ *         - user
  *       properties:
  *         message:
  *           type: string
- *           example: Autentificare reușită
  *         user:
  *           $ref: '#/components/schemas/UserDTO'
  *     LogoutResponse:
  *       type: object
- *       required: [message]
+ *       required:
+ *         - message
  *       properties:
  *         message:
  *           type: string
- *           example: Logged out
  *     AuthRegisterRequest:
  *       type: object
- *       required: [email, password]
+ *       required:
+ *         - email
+ *         - password
  *       properties:
  *         email:
  *           type: string
@@ -77,25 +153,21 @@ function validatePassword(password) {
  *           minLength: 6
  *         name:
  *           type: string
- *       example:
- *         email: user@example.com
- *         password: secret123
- *         name: Ion
  *     AuthLoginRequest:
  *       type: object
- *       required: [email, password]
+ *       required:
+ *         - email
+ *         - password
  *       properties:
  *         email:
  *           type: string
  *           format: email
  *         password:
  *           type: string
- *       example:
- *         email: user@example.com
- *         password: secret123
  *     Error:
  *       type: object
- *       required: [message]
+ *       required:
+ *         - message
  *       properties:
  *         message:
  *           type: string
@@ -108,39 +180,6 @@ function validatePassword(password) {
  *                 type: string
  *               message:
  *                 type: string
- *       examples:
- *         MissingCredentials:
- *           summary: Lipsesc credențiale
- *           value:
- *             message: Emailul și parola sunt obligatorii
- *         WeakPassword:
- *           summary: Parolă prea scurtă
- *           value:
- *             message: Parola trebuie să aibă cel puțin 6 caractere
- *         InvalidEmail:
- *           summary: Email invalid
- *           value:
- *             message: Adresa de email este invalidă
- *         AccountExists:
- *           summary: Cont deja înregistrat
- *           value:
- *             message: Acest cont a fost deja înregistrat
- *         AccountNotFound:
- *           summary: Cont inexistent
- *           value:
- *             message: Acest cont nu există
- *         WrongPassword:
- *           summary: Parolă incorectă
- *           value:
- *             message: Parola incorectă
- *         Unauthorized:
- *           summary: Neautorizat
- *           value:
- *             message: Unauthorized
- *         ServerError:
- *           summary: Eroare server
- *           value:
- *             message: Eroare internă a serverului
  *   headers:
  *     SetCookieHeader:
  *       description: Header Set-Cookie care conține accesToken și refreshToken ca HTTP-only cookies
@@ -152,7 +191,8 @@ function validatePassword(password) {
  * /auth/register:
  *   post:
  *     summary: Register a new user
- *     tags: [Auth]
+ *     tags:
+ *       - Auth
  *     requestBody:
  *       required: true
  *       content:
@@ -169,67 +209,34 @@ function validatePassword(password) {
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/AuthResponse'
- *             examples:
- *               Success:
- *                 summary: Utilizator creat și autentificat
- *                 value:
- *                   user:
- *                     id: 1
- *                     email: user@example.com
- *                     name: Ion
  *       400:
  *         description: Invalid input or account already exists
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
- *             examples:
- *               MissingCredentials:
- *                 $ref: '#/components/schemas/Error/examples/MissingCredentials'
- *               WeakPassword:
- *                 $ref: '#/components/schemas/Error/examples/WeakPassword'
- *               InvalidEmail:
- *                 $ref: '#/components/schemas/Error/examples/InvalidEmail'
- *               AccountExists:
- *                 $ref: '#/components/schemas/Error/examples/AccountExists'
  *       500:
  *         description: Internal server error
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
- *             examples:
- *               ServerError:
- *                 $ref: '#/components/schemas/Error/examples/ServerError'
  */
 router.post('/register', async (req, res) => {
+    const validation = validateRegisterPayload(req.body);
+    if (validation.errors.length > 0 || !validation.data) {
+        return respondWithValidationErrors(res, 400, validation.errors);
+    }
     try {
-        const { email, password, name } = req.body;
-        if (!email || !password) {
-            return res.status(400).json({ message: 'Emailul și parola sunt obligatorii' });
-        }
-        // Normalizează emailul
-        const normalizedEmail = String(email).trim().toLowerCase();
-        // Validare format email simplă
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(normalizedEmail)) {
-            return res.status(400).json({ message: 'Adresa de email este invalidă' });
-        }
-        const passwordErrors = validatePassword(password);
-        if (passwordErrors.length > 0) {
-            return res.status(400).json({
-                message: 'Parola nu îndeplinește cerințele de securitate',
-                details: passwordErrors.map((msg) => ({ field: 'password', message: msg })),
-            });
-        }
-        const result = await authService_1.authService.register({ email: normalizedEmail, password, name: name ?? "" });
+        const { email, password, name } = validation.data;
+        const result = await authService_1.authService.register({ email, password, name: name ?? '' });
         // Setează cookie-urile
         (0, cookieUtils_1.setAuthCookies)(res, result.tokens.accessToken, result.tokens.refreshToken);
         respondWithUser(res, 201, 'Utilizator creat și autentificat', result.user);
     }
     catch (error) {
         if (error.message === 'Contul cu acest email există deja' || error.message === 'Email already exists') {
-            return res.status(400).json({ message: 'Acest cont a fost deja înregistrat' });
+            return respondWithValidationErrors(res, 400, [{ field: 'email', message: 'Acest cont a fost deja înregistrat' }], 'Date invalide');
         }
         console.error('Register error:', error);
         res.status(500).json({ message: 'Eroare internă a serverului' });
@@ -240,7 +247,8 @@ router.post('/register', async (req, res) => {
  * /auth/login:
  *   post:
  *     summary: Login user
- *     tags: [Auth]
+ *     tags:
+ *       - Auth
  *     requestBody:
  *       required: true
  *       content:
@@ -257,68 +265,43 @@ router.post('/register', async (req, res) => {
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/AuthResponse'
- *             examples:
- *               Success:
- *                 value:
- *                   user:
- *                     id: 1
- *                     email: user@example.com
- *                     name: Ion
  *       400:
  *         description: Missing credentials
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
- *             examples:
- *               MissingCredentials:
- *                 $ref: '#/components/schemas/Error/examples/MissingCredentials'
- *               InvalidEmail:
- *                 $ref: '#/components/schemas/Error/examples/InvalidEmail'
  *       401:
  *         description: Invalid credentials
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
- *             examples:
- *               AccountNotFound:
- *                 $ref: '#/components/schemas/Error/examples/AccountNotFound'
- *               WrongPassword:
- *                 $ref: '#/components/schemas/Error/examples/WrongPassword'
  *       500:
  *         description: Internal server error
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
- *             examples:
- *               ServerError:
- *                 $ref: '#/components/schemas/Error/examples/ServerError'
  */
 router.post('/login', async (req, res) => {
+    const validation = validateLoginPayload(req.body);
+    if (validation.errors.length > 0 || !validation.data) {
+        return respondWithValidationErrors(res, 400, validation.errors);
+    }
     try {
-        const { email, password } = req.body;
-        if (!email || !password) {
-            return res.status(400).json({ message: 'Emailul și parola sunt obligatorii' });
-        }
-        // Normalizează și validează emailul
-        const normalizedEmail = String(email).trim().toLowerCase();
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(normalizedEmail)) {
-            return res.status(400).json({ message: 'Adresa de email este invalidă' });
-        }
-        const result = await authService_1.authService.login({ email: normalizedEmail, password });
+        const { email, password } = validation.data;
+        const result = await authService_1.authService.login({ email, password });
         // Setează cookie-urile
         (0, cookieUtils_1.setAuthCookies)(res, result.tokens.accessToken, result.tokens.refreshToken);
         respondWithUser(res, 200, 'Autentificare reușită', result.user);
     }
     catch (error) {
         if (error.message === 'Parola incorectă') {
-            return res.status(401).json({ message: 'Parola incorectă' });
+            return respondWithValidationErrors(res, 401, [{ field: 'password', message: 'Parola incorectă' }], 'Autentificare eșuată');
         }
         if (error.message === 'Acest cont nu există') {
-            return res.status(401).json({ message: 'Acest cont nu există' });
+            return respondWithValidationErrors(res, 401, [{ field: 'email', message: 'Acest cont nu există' }], 'Autentificare eșuată');
         }
         console.error('Login error:', error);
         res.status(500).json({ message: 'Eroare internă a serverului' });
@@ -329,7 +312,8 @@ router.post('/login', async (req, res) => {
  * /auth/refresh:
  *   post:
  *     summary: Reîmprospătează access token-ul folosind refresh token-ul din cookie
- *     tags: [Auth]
+ *     tags:
+ *       - Auth
  *     responses:
  *       200:
  *         description: Token nou generat
@@ -346,18 +330,12 @@ router.post('/login', async (req, res) => {
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
- *             examples:
- *               Unauthorized:
- *                 $ref: '#/components/schemas/Error/examples/Unauthorized'
  *       500:
  *         description: Eroare internă a serverului
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
- *             examples:
- *               ServerError:
- *                 $ref: '#/components/schemas/Error/examples/ServerError'
  */
 router.post('/refresh', async (req, res) => {
     const refreshToken = (0, cookieUtils_1.readRefreshToken)(req);
@@ -381,7 +359,8 @@ router.post('/refresh', async (req, res) => {
  * /auth/me:
  *   get:
  *     summary: Returnează utilizatorul autentificat
- *     tags: [Auth]
+ *     tags:
+ *       - Auth
  *     responses:
  *       200:
  *         description: OK
@@ -389,31 +368,18 @@ router.post('/refresh', async (req, res) => {
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/AuthResponse'
- *             examples:
- *               Success:
- *                 value:
- *                   user:
- *                     id: 1
- *                     email: user@example.com
- *                     name: Ion
  *       401:
  *         description: Unauthorized
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
- *             examples:
- *               Unauthorized:
- *                 $ref: '#/components/schemas/Error/examples/Unauthorized'
  *       500:
  *         description: Internal server error
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
- *             examples:
- *               ServerError:
- *                 $ref: '#/components/schemas/Error/examples/ServerError'
  */
 // Reintrodus: GET /auth/me – returnează utilizatorul autentificat din access_token
 router.get('/me', auth_1.authenticateToken, (req, res) => {
@@ -427,7 +393,8 @@ router.get('/me', auth_1.authenticateToken, (req, res) => {
  * /auth/logout:
  *   post:
  *     summary: Logout user
- *     tags: [Auth]
+ *     tags:
+ *       - Auth
  *     responses:
  *       200:
  *         description: Logout successful
@@ -440,19 +407,12 @@ router.get('/me', auth_1.authenticateToken, (req, res) => {
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/LogoutResponse'
- *             examples:
- *               Success:
- *                 value:
- *                   message: Logged out
  *       500:
- *         description: Internal server error (logout still clears cookies and returns 200 in implementation)
+ *         description: Internal server error
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
- *             examples:
- *               ServerError:
- *                 $ref: '#/components/schemas/Error/examples/ServerError'
  */
 router.post('/logout', async (req, res) => {
     try {

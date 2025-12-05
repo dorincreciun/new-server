@@ -6,7 +6,8 @@ export declare class AuthController {
      * /api/auth/register:
      *   post:
      *     summary: Înregistrează un utilizator nou
-     *     tags: [Autentificare]
+     *     tags:
+     *       - Autentificare
      *     requestBody:
      *       required: true
      *       content:
@@ -60,7 +61,8 @@ export declare class AuthController {
      * /api/auth/login:
      *   post:
      *     summary: Autentifică un utilizator existent
-     *     tags: [Autentificare]
+     *     tags:
+     *       - Autentificare
      *     requestBody:
      *       required: true
      *       content:
@@ -111,7 +113,8 @@ export declare class AuthController {
      * /api/auth/me:
      *   get:
      *     summary: Obține informațiile utilizatorului autentificat (necesită autentificare prin cookie)
-     *     tags: [Autentificare]
+     *     tags:
+     *       - Autentificare
      *     responses:
      *       200:
      *         description: Informații utilizator
@@ -140,7 +143,8 @@ export declare class AuthController {
      * /api/auth/logout:
      *   post:
      *     summary: Deconectează utilizatorul (client-side logout)
-     *     tags: [Autentificare]
+     *     tags:
+     *       - Autentificare
      *     responses:
      *       200:
      *         description: Deconectare reușită

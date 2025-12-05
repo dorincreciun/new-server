@@ -53,13 +53,16 @@ export class ProductController {
         }
       }
 
+      const normalizedDescription: string | null =
+        typeof description === 'string' ? (description.trim() || null) : null;
+
       const productData: CreateProductData = {
         name: name.trim(),
-        description: description?.trim() || undefined,
+        description: normalizedDescription,
         basePrice,
         stock: stock || 0,
         categoryId,
-        imageUrl: normalizedImage,
+        imageUrl: normalizedImage ?? null,
       };
 
       const product = await productService.createProduct(productData);
@@ -380,31 +383,7 @@ export class ProductController {
   /**
    * Caută produse după nume
    */
-  async searchProducts(req: Request, res: Response): Promise<void> {
-    try {
-      const { name } = req.query;
-
-      if (!name || typeof name !== 'string' || name.trim().length === 0) {
-        res.status(400).json({
-          error: 'Parametrul de căutare "name" este obligatoriu',
-        });
-        return;
-      }
-
-      const products = await productService.searchProductsByName(name.trim());
-
-      res.status(200).json({
-        message: 'Căutarea produselor a fost efectuată cu succes',
-        data: products,
-        count: products.length,
-      });
-    } catch (error) {
-      console.error('Eroare la căutarea produselor:', error);
-      res.status(500).json({
-        error: 'Eroare internă a serverului',
-      });
-    }
-  }
+  // Eliminat: metodă veche de căutare după nume (înlocuită de searchProducts cu suport pentru q, paginare și sortare)
 
   /**
    * Obține produsele cu stoc scăzut

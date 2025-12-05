@@ -13,6 +13,18 @@ export declare class ProductController {
      */
     filterProducts(req: Request, res: Response): Promise<void>;
     /**
+     * Caută produse după text (search) cu paginare și sortare
+     * Parametri acceptați (query):
+     * - q: string (obligatoriu) — termenul de căutare
+     * - categorySlug: string (opțional) — filtrează după categorie
+     * - priceMin, priceMax: number (opțional) — filtrează după interval de preț (pe maxPrice/minPrice)
+     * - sort: "price" | "createdAt" | "popularity" (implicit: createdAt)
+     * - order: "asc" | "desc" (implicit: desc)
+     * - page: number (implicit: 1)
+     * - limit: number (implicit: 12; max: 100)
+     */
+    searchProducts(req: Request, res: Response): Promise<void>;
+    /**
      * Obține toate produsele
      */
     getAllProducts(req: Request, res: Response): Promise<void>;
@@ -35,7 +47,6 @@ export declare class ProductController {
     /**
      * Caută produse după nume
      */
-    searchProducts(req: Request, res: Response): Promise<void>;
     /**
      * Obține produsele cu stoc scăzut
      */

@@ -4,7 +4,8 @@ declare const router: import("express-serve-static-core").Router;
  * /products/{id}:
  *   get:
  *     summary: Obține un produs după ID
- *     tags: [Products]
+ *     tags:
+ *       - Products
  *     parameters:
  *       - in: path
  *         name: id
@@ -12,7 +13,6 @@ declare const router: import("express-serve-static-core").Router;
  *         schema:
  *           type: integer
  *         description: ID-ul produsului
- *         example: 1
  *     responses:
  *       200:
  *         description: Produsul a fost găsit

@@ -8,12 +8,22 @@ class ProductService {
      * Creează un nou produs
      */
     async createProduct(data) {
-        return await prisma.product.create({
-            data,
+        const created = await prisma.product.create({
+            data: {
+                name: data.name,
+                description: data.description ?? null,
+                basePrice: data.basePrice,
+                // dacă modelul are default pentru stock, îl putem omite când e undefined
+                ...(data.stock !== undefined ? { stock: data.stock } : {}),
+                categoryId: data.categoryId,
+                imageUrl: data.imageUrl ?? null,
+            },
             include: {
                 category: true,
             },
         });
+        // asigurăm tiparea pentru rezultat cu relația category inclusă
+        return created;
     }
     /**
      * Obține toate produsele
@@ -305,24 +315,60 @@ class ProductService {
      */
     async filterProductsPaginated(opts) {
         const { categorySlug, search, flags, flagsMode = 'any', ingredients, ingredientsMode = 'all', variants, variantsMode = 'any', priceMin, priceMax, page = 1, pageSize = 20, sortBy = 'createdAt', order = 'desc', } = opts;
-        const andFilters = [];
+        // Vom construi filtrele în doi pași pentru a permite fallback de tip OR când AND nu găsește nimic
+        const baseAndFilters = [];
         if (categorySlug && categorySlug.trim().length > 0) {
-            andFilters.push({ category: { slug: categorySlug } });
+            baseAndFilters.push({ category: { slug: categorySlug } });
         }
-        if (search && search.trim()) {
-            andFilters.push({ name: { contains: search.trim() } });
-        }
+        // Pre-procesare search: eliminăm stopwords uzuale și token-urile foarte scurte
+        const STOPWORDS_RO = new Set([
+            'si', 'sau', 'de', 'la', 'cu', 'pe', 'in', 'din', 'pentru', 'un', 'o', 'una', 'unei', 'unui', 'al', 'a', 'ai', 'ale', 'alei', 'aleor', 'aleea', 'este', 'e', 'ca', 'care', 'ce', 'mai', 'foarte', 'fara', 'între', 'prin', 'lui', 'ei', 'lor', 'sa', 'să', 'va', 'vă', 'nu', 'da'
+        ].map(s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()));
+        // Normalizare fără folosirea Unicode property escapes (compatibilă cu versiuni mai vechi de Node)
+        const norm = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        const rawWords = (search && search.trim()) ? search.trim().split(/\s+/).filter(Boolean) : [];
+        const filteredWords = rawWords.filter(w => {
+            const nw = norm(w);
+            return nw.length > 2 && !STOPWORDS_RO.has(nw);
+        });
+        const buildSearchFilters = (words, mode) => {
+            // Potrivirea case-insensitive se bazează pe collation-ul MySQL (ex: utf8mb4_general_ci).
+            // Nu folosim `mode: 'insensitive'` deoarece nu este suportat pe MySQL în Prisma.
+            const makeFieldConds = (w) => {
+                const contains = { contains: w };
+                return [
+                    { name: contains },
+                    { description: contains },
+                    { category: { name: contains } },
+                    { category: { slug: contains } },
+                ];
+            };
+            if (!words || words.length === 0) {
+                // Dacă nu rămân cuvinte, folosim tot șirul ca un singur termen
+                if (!search || !search.trim())
+                    return [];
+                return [{ OR: makeFieldConds(search.trim()) }];
+            }
+            if (mode === 'AND') {
+                return words.map(w => ({ OR: makeFieldConds(w) }));
+            }
+            else {
+                return [{ OR: words.flatMap(w => makeFieldConds(w)) }];
+            }
+        };
+        // Vom construi separat filtrele pentru search și restul filtrelor, pentru a putea reconstrui ușor fallback-ul
+        const otherFilters = [];
         if (flags && flags.length > 0) {
             const cleaned = flags.map((s) => String(s).trim()).filter(Boolean);
             if (cleaned.length > 0) {
                 if (flagsMode === 'all') {
                     // AND logic: fiecare cheie trebuie să existe ca flag
                     for (const key of cleaned) {
-                        andFilters.push({ flags: { some: { flag: { key } } } });
+                        otherFilters.push({ flags: { some: { flag: { key } } } });
                     }
                 }
                 else {
-                    andFilters.push({
+                    otherFilters.push({
                         flags: {
                             some: {
                                 flag: { key: { in: cleaned } }
@@ -338,11 +384,11 @@ class ProductService {
                 if (ingredientsMode === 'all') {
                     // AND logic: fiecare ingredient din listă trebuie să existe
                     for (const key of cleaned) {
-                        andFilters.push({ ingredients: { some: { ingredient: { key } } } });
+                        otherFilters.push({ ingredients: { some: { ingredient: { key } } } });
                     }
                 }
                 else {
-                    andFilters.push({
+                    otherFilters.push({
                         ingredients: {
                             some: {
                                 ingredient: { key: { in: cleaned } }
@@ -353,14 +399,30 @@ class ProductService {
             }
         }
         if (priceMin !== undefined) {
-            andFilters.push({ maxPrice: { gte: priceMin } });
+            otherFilters.push({ maxPrice: { gte: priceMin } });
         }
         if (priceMax !== undefined) {
-            andFilters.push({ minPrice: { lte: priceMax } });
+            otherFilters.push({ minPrice: { lte: priceMax } });
         }
-        const where = andFilters.length > 0 ? { AND: andFilters } : {};
+        // Încercare 1: AND între cuvinte (combinat cu celelalte filtre)
+        let andFilters = [
+            ...baseAndFilters,
+            ...buildSearchFilters(filteredWords, 'AND'),
+            ...otherFilters,
+        ];
+        let where = andFilters.length > 0 ? { AND: andFilters } : {};
         // Total inițial (fără filtrul pe variants)
-        const totalPreVariants = await prisma.product.count({ where });
+        let totalPreVariants = await prisma.product.count({ where });
+        // Fallback: dacă nu s-a găsit nimic și avem mai multe cuvinte, încercăm OR între cuvinte
+        if (totalPreVariants === 0 && filteredWords.length > 1) {
+            andFilters = [
+                ...baseAndFilters,
+                ...buildSearchFilters(filteredWords, 'OR'),
+                ...otherFilters,
+            ];
+            where = andFilters.length > 0 ? { AND: andFilters } : {};
+            totalPreVariants = await prisma.product.count({ where });
+        }
         // Dacă nu avem filtrare pe variants, putem pagina direct în DB
         if (!variants || variants.length === 0) {
             const items = await prisma.product.findMany({

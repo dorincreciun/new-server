@@ -1,10 +1,11 @@
 import { Product, Category } from '@prisma/client';
 export interface CreateProductData {
     name: string;
-    description?: string;
+    description?: string | null;
     basePrice: number;
     stock?: number;
     categoryId: number;
+    imageUrl?: string | null;
 }
 export interface UpdateProductData {
     name?: string;
@@ -12,6 +13,7 @@ export interface UpdateProductData {
     basePrice?: number;
     stock?: number;
     categoryId?: number;
+    imageUrl?: string | null;
 }
 export interface ProductWithCategory extends Product {
     category: Category;
