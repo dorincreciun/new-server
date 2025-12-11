@@ -399,7 +399,9 @@ router.get('/facets/:slug', (req, res) => productController.getFacetsByCategoryS
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-// Eliminat: GET /products/:id – detaliu produs prin ID nu este permis (folosim doar slug-uri)
+// Notă: evităm sintaxa cu regex în path (ex. /:id(\d+)) deoarece unele versiuni de path-to-regexp nu o acceptă.
+// Validarea numerică a ID-ului este făcută în controller.
+router.get('/:id', (req, res) => productController.getProductById(req, res));
 
 // ELIMINAT: PUT /products/:id - funcționalitate administrativă
 

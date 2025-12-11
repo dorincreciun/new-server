@@ -260,6 +260,7 @@ components:
         - slug
         - name
         - createdAt
+        - updatedAt
       properties:
         id:
           type: integer
@@ -1106,7 +1107,10 @@ paths:
               schema:
                 type: object
                 properties:
-                  items:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
                     type: array
                     items:
                       $ref: '#/components/schemas/Category'
@@ -1145,8 +1149,26 @@ paths:
                     $ref: '#/components/schemas/Category'
         '400':
           description: Slug invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                InvalidSlug:
+                  summary: Slug invalid
+                  value:
+                    error: Slug invalid
         '404':
           description: Categoria nu a fost găsită
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                NotFound:
+                  summary: Categoria nu a fost găsită
+                  value:
+                    error: Categoria nu a fost găsită
   /products:
     get:
       summary: Obține toate produsele (endpoint simplu)
