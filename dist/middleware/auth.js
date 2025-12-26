@@ -8,10 +8,17 @@ const cookieUtils_1 = require("../utils/cookieUtils");
  * Middleware pentru autentificare JWT din cookie
  */
 function authenticateToken(req, res, next) {
-    const token = (0, cookieUtils_1.readAccessToken)(req);
+    // 1) Încearcă Authorization: Bearer <token>
+    const authHeader = req.get('authorization') || req.get('Authorization');
+    const bearerMatch = authHeader && authHeader.startsWith('Bearer ')
+        ? authHeader.substring('Bearer '.length).trim()
+        : '';
+    // 2) Fallback: cookie http-only
+    const cookieToken = (0, cookieUtils_1.readAccessToken)(req);
+    const token = bearerMatch || cookieToken || '';
     if (!token) {
         return res.status(401).json({
-            message: 'Unauthorized'
+            error: 'Token de acces necesar'
         });
     }
     try {
@@ -20,8 +27,8 @@ function authenticateToken(req, res, next) {
         next();
     }
     catch (error) {
-        return res.status(401).json({
-            message: 'Unauthorized'
+        return res.status(403).json({
+            error: 'Token invalid'
         });
     }
 }
@@ -29,7 +36,11 @@ function authenticateToken(req, res, next) {
  * Middleware opțional pentru autentificare (nu returnează eroare dacă nu există token)
  */
 function optionalAuth(req, res, next) {
-    const token = (0, cookieUtils_1.readAccessToken)(req);
+    const authHeader = req.get('authorization') || req.get('Authorization');
+    const bearerMatch = authHeader && authHeader.startsWith('Bearer ')
+        ? authHeader.substring('Bearer '.length).trim()
+        : '';
+    const token = bearerMatch || (0, cookieUtils_1.readAccessToken)(req);
     if (token) {
         try {
             const user = authService_1.authService.verifyAccessToken(token);

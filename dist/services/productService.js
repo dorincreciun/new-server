@@ -97,7 +97,20 @@ class ProductService {
         return await prisma.product.findUnique({
             where: { id },
             include: {
+                // Include toate relațiile relevante pentru a întoarce "toată informația"
                 category: true,
+                flags: {
+                    include: { flag: true },
+                },
+                ingredients: {
+                    include: { ingredient: true },
+                },
+                variants: {
+                    include: {
+                        dough: true,
+                        size: true,
+                    },
+                },
             },
         });
     }

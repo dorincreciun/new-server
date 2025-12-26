@@ -12,8 +12,8 @@ export declare const BrowseQuerySchema: z.ZodObject<{
     isNew: z.ZodOptional<z.ZodCoercedBoolean<unknown>>;
     newerThanDays: z.ZodOptional<z.ZodDefault<z.ZodCoercedNumber<unknown>>>;
     sort: z.ZodDefault<z.ZodEnum<{
-        popularity: "popularity";
         price: "price";
+        popularity: "popularity";
         rating: "rating";
         newest: "newest";
     }>>;

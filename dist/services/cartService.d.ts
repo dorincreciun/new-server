@@ -9,24 +9,6 @@ export declare class CartService {
         cartId: number;
         items: ({
             productVariant: {
-                product: {
-                    name: string;
-                    id: number;
-                    createdAt: Date;
-                    updatedAt: Date;
-                    description: string | null;
-                    basePrice: import("@prisma/client/runtime/library").Decimal;
-                    minPrice: import("@prisma/client/runtime/library").Decimal | null;
-                    maxPrice: import("@prisma/client/runtime/library").Decimal | null;
-                    imageUrl: string | null;
-                    popularity: number;
-                    ratingAverage: import("@prisma/client/runtime/library").Decimal | null;
-                    ratingCount: number;
-                    isCustomizable: boolean;
-                    releasedAt: Date | null;
-                    stock: number;
-                    categoryId: number;
-                };
                 dough: {
                     id: number;
                     createdAt: Date;
@@ -39,11 +21,29 @@ export declare class CartService {
                     key: string;
                     label: string | null;
                 } | null;
+                product: {
+                    name: string;
+                    id: number;
+                    createdAt: Date;
+                    updatedAt: Date;
+                    description: string | null;
+                    stock: number;
+                    basePrice: import("@prisma/client/runtime/library").Decimal;
+                    minPrice: import("@prisma/client/runtime/library").Decimal | null;
+                    maxPrice: import("@prisma/client/runtime/library").Decimal | null;
+                    imageUrl: string | null;
+                    popularity: number;
+                    ratingAverage: import("@prisma/client/runtime/library").Decimal | null;
+                    ratingCount: number;
+                    isCustomizable: boolean;
+                    releasedAt: Date | null;
+                    categoryId: number;
+                };
             } & {
                 id: number;
-                stock: number;
-                price: import("@prisma/client/runtime/library").Decimal;
                 productId: number;
+                price: import("@prisma/client/runtime/library").Decimal;
+                stock: number;
                 isDefault: boolean;
                 doughId: number | null;
                 sizeId: number | null;

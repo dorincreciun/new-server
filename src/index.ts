@@ -1,12 +1,8 @@
-import { createApp, ensureSchemaCompatibility } from './server';
-import { config } from './config';
+import { startServer } from './server';
 
-(async () => {
-  await ensureSchemaCompatibility();
-  const app = createApp();
-  app.listen(config.port, () => {
-    console.log(`Server listening on port ${config.port}`);
-  });
-})();
+startServer().catch(err => {
+  console.error('Failed to start server:', err);
+  process.exit(1);
+});
 
 

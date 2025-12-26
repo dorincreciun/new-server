@@ -16,7 +16,11 @@ const categoryController = new categoryController_1.CategoryController();
  *     Category:
  *       type: object
  *       required:
+ *         - id
+ *         - slug
  *         - name
+ *         - createdAt
+ *         - updatedAt
  *       properties:
  *         id:
  *           type: integer
@@ -115,7 +119,10 @@ const categoryController = new categoryController_1.CategoryController();
  *             schema:
  *               type: object
  *               properties:
- *                 items:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
  *                   type: array
  *                   items:
  *                     $ref: '#/components/schemas/Category'

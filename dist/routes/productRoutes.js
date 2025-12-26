@@ -341,4 +341,54 @@ router.get('/search', (req, res) => productController.searchProducts(req, res));
  *         description: Eroare internă a serverului
  */
 router.get('/facets/:slug', (req, res) => productController.getFacetsByCategorySlug(req, res));
+// ELIMINAT: GET /products/filter - folosește /browse/products pentru filtrare
+// Eliminat: /products/low-stock - funcționalitate administrativă, nu pentru frontend
+// Eliminat: /products/stats - funcționalitate administrativă, nu pentru frontend
+// ELIMINAT: GET /products/category/:categoryId - folosește /browse/products cu categorySlug
+// ELIMINAT: GET /products/category-name/:categoryName - folosește /browse/products cu categorySlug
+// ELIMINAT: GET /products/category-slug/:slug - folosește /browse/products cu categorySlug
+// ELIMINAT: GET /categories/:slug/products - folosește /browse/products cu categorySlug
+/**
+ * @swagger
+ * /products/{id}:
+ *   get:
+ *     summary: Obține un produs după ID
+ *     tags:
+ *       - Products
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID-ul produsului
+ *     responses:
+ *       200:
+ *         description: Produsul a fost găsit
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ProductResponse'
+ *       400:
+ *         description: ID invalid
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Produsul nu a fost găsit
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Eroare internă a serverului
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+// Notă: evităm sintaxa cu regex în path (ex. /:id(\d+)) deoarece unele versiuni de path-to-regexp nu o acceptă.
+// Validarea numerică a ID-ului este făcută în controller.
+router.get('/:id', (req, res) => productController.getProductById(req, res));
 //# sourceMappingURL=productRoutes.js.map

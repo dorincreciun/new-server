@@ -283,6 +283,83 @@ components:
           format: date-time
           description: Data și ora creării
           example: '2024-01-15T10:30:00Z'
+    Flag:
+      type: object
+      description: Flag utilizat pentru etichetarea/filtrarea produselor (ex. vegetarian, picant)
+      properties:
+        id:
+          type: integer
+          example: 1
+        key:
+          type: string
+          example: vegetarian
+        label:
+          type: string
+          nullable: true
+          example: Vegetarian
+    Ingredient:
+      type: object
+      description: Ingredient disponibil pentru produse
+      properties:
+        id:
+          type: integer
+          example: 3
+        key:
+          type: string
+          example: mozzarella
+        label:
+          type: string
+          nullable: true
+          example: Mozzarella
+    ProductFlag:
+      type: object
+      description: Legătura dintre un produs și un flag, incluzând detaliile flag-ului
+      properties:
+        productId:
+          type: integer
+          example: 1
+        flagId:
+          type: integer
+          example: 2
+        flag:
+          $ref: '#/components/schemas/Flag'
+    ProductIngredient:
+      type: object
+      description: Legătura dintre un produs și un ingredient, incluzând detaliile ingredientului
+      properties:
+        productId:
+          type: integer
+          example: 1
+        ingredientId:
+          type: integer
+          example: 3
+        ingredient:
+          $ref: '#/components/schemas/Ingredient'
+    ProductVariant:
+      type: object
+      description: Varianta unui produs (mărime, aluat) cu preț specific
+      properties:
+        id:
+          type: integer
+          example: 10
+        price:
+          type: number
+          format: decimal
+          example: 31.5
+        stock:
+          type: integer
+          example: 5
+        isDefault:
+          type: boolean
+          example: false
+        dough:
+          allOf:
+            - $ref: '#/components/schemas/DoughType'
+          nullable: true
+        size:
+          allOf:
+            - $ref: '#/components/schemas/SizeOption'
+          nullable: true
         updatedAt:
           type: string
           format: date-time
@@ -407,6 +484,21 @@ components:
           example: '2024-01-15T10:30:00Z'
         category:
           $ref: '#/components/schemas/Category'
+        flags:
+          type: array
+          description: Flag-urile asociate produsului (ex. vegetarian, picant)
+          items:
+            $ref: '#/components/schemas/ProductFlag'
+        ingredients:
+          type: array
+          description: Ingredientele asociate produsului
+          items:
+            $ref: '#/components/schemas/ProductIngredient'
+        variants:
+          type: array
+          description: Variantele produsului (mărime, aluat) cu prețuri specifice
+          items:
+            $ref: '#/components/schemas/ProductVariant'
     SearchProductsResponse:
       type: object
       properties:
@@ -511,7 +603,7 @@ components:
       properties:
         message:
           type: string
-          example: Produsul a fost creat cu succes
+          example: Produsul a fost obținut cu succes
         data:
           $ref: '#/components/schemas/Product'
     ProductListResponse:
@@ -1315,6 +1407,61 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProductResponse'
+              examples:
+                Success:
+                  summary: Produs cu toate relațiile incluse
+                  value:
+                    message: Produsul a fost obținut cu succes
+                    data:
+                      id: 1
+                      name: Pizza Margherita
+                      description: Pizza clasică italiană cu sos de roșii, mozzarella și busuioc
+                      basePrice: 23.5
+                      stock: 0
+                      categoryId: 1
+                      createdAt: '2024-01-15T10:30:00Z'
+                      updatedAt: '2024-01-15T10:30:00Z'
+                      imageUrl: null
+                      category:
+                        id: 1
+                        slug: pizza
+                        name: Pizza
+                        description: Pizze clasice și speciale
+                        createdAt: '2024-01-10T10:00:00Z'
+                        updatedAt: '2024-01-10T10:00:00Z'
+                      flags:
+                        - productId: 1
+                          flagId: 2
+                          flag:
+                            id: 2
+                            key: vegetarian
+                            label: Vegetarian
+                      ingredients:
+                        - productId: 1
+                          ingredientId: 3
+                          ingredient:
+                            id: 3
+                            key: mozzarella
+                            label: Mozzarella
+                        - productId: 1
+                          ingredientId: 5
+                          ingredient:
+                            id: 5
+                            key: busuioc
+                            label: Busuioc
+                      variants:
+                        - id: 10
+                          price: 23.5
+                          stock: 3
+                          isDefault: true
+                          dough:
+                            id: 1
+                            key: clasic
+                            label: Aluat Clasic
+                          size:
+                            id: 2
+                            key: medie
+                            label: Medie (30cm)
         '400':
           description: ID invalid
           content:

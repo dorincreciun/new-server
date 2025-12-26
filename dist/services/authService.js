@@ -56,7 +56,7 @@ class AuthService {
             where: { email: normalizedEmail }
         });
         if (existingUser) {
-            throw new Error('Contul cu acest email există deja');
+            throw new Error('An account with this email already exists');
         }
         // Criptează parola
         const saltRounds = 12;
@@ -92,12 +92,12 @@ class AuthService {
             where: { email: normalizedEmail }
         });
         if (!user) {
-            throw new Error('Acest cont nu există');
+            throw new Error('This account does not exist');
         }
         // Verifică parola
         const isPasswordValid = await bcryptjs_1.default.compare(password, user.passwordHash);
         if (!isPasswordValid) {
-            throw new Error('Parola incorectă');
+            throw new Error('Incorrect password');
         }
         // Generează tokenuri
         const tokens = await this.generateTokenPair(user.id);
@@ -123,7 +123,7 @@ class AuthService {
             };
         }
         catch (error) {
-            throw new Error('Token invalid sau expirat');
+            throw new Error('Invalid or expired token');
         }
     }
     /**
@@ -138,7 +138,7 @@ class AuthService {
             };
         }
         catch (error) {
-            throw new Error('Refresh token invalid sau expirat');
+            throw new Error('Invalid or expired refresh token');
         }
     }
     /**
@@ -153,19 +153,19 @@ class AuthService {
             include: { user: true }
         });
         if (!tokenRecord || tokenRecord.revokedAt || tokenRecord.expiresAt < new Date()) {
-            throw new Error('Refresh token invalid sau expirat');
+            throw new Error('Invalid or expired refresh token');
         }
         // Verifică hash-ul tokenului trimis față de cel stocat
         const tokenMatches = await bcryptjs_1.default.compare(refreshToken, tokenRecord.tokenHash);
         if (!tokenMatches) {
-            throw new Error('Refresh token invalid');
+            throw new Error('Invalid refresh token');
         }
         // Verifică binding-ul opțional (userAgent/IP)
         if (userAgent && tokenRecord.userAgent && tokenRecord.userAgent !== userAgent) {
-            throw new Error('Refresh token compromis - userAgent mismatch');
+            throw new Error('Compromised refresh token - userAgent mismatch');
         }
         if (ipAddress && tokenRecord.ipAddress && tokenRecord.ipAddress !== ipAddress) {
-            throw new Error('Refresh token compromis - IP mismatch');
+            throw new Error('Compromised refresh token - IP mismatch');
         }
         // Revocă refresh token-ul curent
         await prisma.refreshToken.update({
@@ -206,7 +206,7 @@ class AuthService {
             where: { id: userId }
         });
         if (!user) {
-            throw new Error('Utilizatorul nu a fost găsit');
+            throw new Error('User not found');
         }
         // Generează access token
         const accessToken = jwt.sign({
