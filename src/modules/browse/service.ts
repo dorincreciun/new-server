@@ -1,31 +1,90 @@
 import prisma from '../../shared/prisma/client';
 import { BrowseProductsInput, BrowseFiltersInput } from './dto';
+import { formatProduct } from '../../shared/utils/formatters';
 
 export class BrowseService {
   async getProducts(query: BrowseProductsInput) {
-    const { q, categorySlug, page, limit, sort, order } = query;
+    const {
+      q,
+      categorySlug,
+      page,
+      limit,
+      sort,
+      order,
+      priceMin,
+      priceMax,
+      flags,
+      ingredients,
+      dough,
+      size,
+      isCustomizable,
+      isNew,
+    } = query;
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: any = { AND: [] };
+
     if (categorySlug) {
-      where.category = { slug: categorySlug };
+      where.AND.push({ category: { slug: categorySlug } });
     }
+
     if (q) {
-      where.OR = [
-        { name: { contains: q } },
-        { description: { contains: q } },
-      ];
+      where.AND.push({
+        OR: [
+          { name: { contains: q } },
+          { description: { contains: q } },
+        ],
+      });
     }
+
+    if (priceMin !== undefined) {
+      where.AND.push({ minPrice: { gte: priceMin } });
+    }
+
+    if (priceMax !== undefined) {
+      where.AND.push({ minPrice: { lte: priceMax } });
+    }
+
+    if (typeof isCustomizable === 'boolean') {
+      where.AND.push({ isCustomizable });
+    }
+
+    if (isNew === true) {
+      const threshold = new Date();
+      threshold.setDate(threshold.getDate() - 30); // 30 zile default
+      where.AND.push({ releasedAt: { gte: threshold } });
+    }
+
+    if (flags && flags.length > 0) {
+      flags.forEach((key) => {
+        where.AND.push({ flags: { some: { flag: { key } } } });
+      });
+    }
+
+    if (ingredients && ingredients.length > 0) {
+      ingredients.forEach((key) => {
+        where.AND.push({ ingredients: { some: { ingredient: { key } } } });
+      });
+    }
+
+    if (dough || size) {
+      const variantWhere: any = {};
+      if (dough) variantWhere.dough = { key: dough };
+      if (size) variantWhere.size = { key: size };
+      where.AND.push({ variants: { some: variantWhere } });
+    }
+
+    const finalWhere = where.AND.length > 0 ? where : {};
 
     let orderBy: any = {};
     if (sort === 'price') orderBy = { minPrice: order };
     else if (sort === 'rating') orderBy = { ratingAverage: order };
     else if (sort === 'popularity') orderBy = { popularity: order };
-    else if (sort === 'newest') orderBy = { createdAt: order };
+    else if (sort === 'newest') orderBy = { releasedAt: order };
 
     const [products, total] = await Promise.all([
       prisma.product.findMany({
-        where,
+        where: finalWhere,
         include: {
           category: true,
           flags: { include: { flag: true } },
@@ -36,24 +95,10 @@ export class BrowseService {
         skip,
         take: limit,
       }),
-      prisma.product.count({ where }),
+      prisma.product.count({ where: finalWhere }),
     ]);
 
-    const formattedProducts = products.map((p) => ({
-      ...p,
-      basePrice: Number(p.basePrice),
-      minPrice: p.minPrice ? Number(p.minPrice) : null,
-      maxPrice: p.maxPrice ? Number(p.maxPrice) : null,
-      ratingAverage: p.ratingAverage ? Number(p.ratingAverage) : null,
-      flags: p.flags.map((f) => f.flag),
-      ingredients: p.ingredients.map((i) => i.ingredient),
-      variants: p.variants.map((v) => ({
-        ...v,
-        price: Number(v.price),
-        doughType: v.dough,
-        sizeOption: v.size,
-      })),
-    }));
+    const formattedProducts = products.map(formatProduct);
 
     return {
       products: formattedProducts,

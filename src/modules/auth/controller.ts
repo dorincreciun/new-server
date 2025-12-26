@@ -1,34 +1,36 @@
 import { Request, Response, NextFunction } from 'express';
 import { authService } from './service';
-import { sendSuccess } from '../../shared/http/response';
+import { sendSuccess } from '../../shared/api/http/response';
 import { setAuthCookies, clearAuthCookies, readRefreshToken } from '../../utils/cookieUtils';
 import { UnauthorizedError } from '../../shared/http/errors';
-import { paths } from '../../docs/schema';
+import { components } from '../../docs/schema';
+
+type RegisterResponse = components["schemas"]["UserDTO"];
 
 export class AuthController {
   async register(
-    req: Request<any, any, paths['/auth/register']['post']['requestBody']['content']['application/json']>,
+    req: Request,
     res: Response,
     next: NextFunction
   ) {
     try {
       const { user, tokens } = await authService.register(req.body);
       setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
-      return sendSuccess(res, user, 'Registration successful', 201);
+      return sendSuccess<RegisterResponse>(res, user, 'Registration successful', 201);
     } catch (error) {
       next(error);
     }
   }
 
   async login(
-    req: Request<any, any, paths['/auth/login']['post']['requestBody']['content']['application/json']>,
+    req: Request,
     res: Response,
     next: NextFunction
   ) {
     try {
       const { user, tokens } = await authService.login(req.body);
       setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
-      return sendSuccess(res, user, 'Login successful');
+      return sendSuccess<RegisterResponse>(res, user, 'Login successful');
     } catch (error) {
       next(error);
     }
@@ -41,7 +43,7 @@ export class AuthController {
 
       const { user, tokens } = await authService.rotateRefreshToken(refreshToken);
       setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
-      return sendSuccess(res, user, 'Token refreshed');
+      return sendSuccess<RegisterResponse>(res, user, 'Token refreshed');
     } catch (error) {
       next(error);
     }
@@ -49,9 +51,9 @@ export class AuthController {
 
   async me(req: Request, res: Response, next: NextFunction) {
     try {
-      // Utilizatorul ar trebui să fie deja atașat de middleware-ul de auth
-      if (!(req as any).user) throw new UnauthorizedError();
-      return sendSuccess(res, (req as any).user, 'Current user');
+      const user = (req as any).user;
+      if (!user) throw new UnauthorizedError();
+      return sendSuccess<RegisterResponse>(res, user, 'Current user');
     } catch (error) {
       next(error);
     }

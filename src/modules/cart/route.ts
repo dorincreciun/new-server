@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { cartController } from './controller';
-import { authMiddleware } from '../../shared/middleware/auth';
+import { authMiddleware } from '../../middlewares/auth';
 import { validate } from '../../shared/middleware/validate';
 import { addToCartSchema, updateCartItemSchema } from './dto';
 

@@ -1,4 +1,4 @@
-openapi: 3.0.3
+﻿openapi: 3.0.3
 info:
   title: Pizza Shop API
   version: 2.0.0
@@ -20,8 +20,8 @@ components:
       required: [message, data]
       properties:
         message: { type: string, example: Operation successful }
-        data: { type: object }
-        meta: { type: object }
+        data: { type: object, nullable: true }
+        meta: { $ref: '#/components/schemas/PaginationMeta', nullable: true }
     ErrorResponse:
       type: object
       required: [message, code]
@@ -49,7 +49,7 @@ components:
         id: { type: integer, example: 1 }
         slug: { type: string, example: classic-pizzas }
         name: { type: string, example: Classic Pizzas }
-        description: { type: string, example: Traditional pizzas with classic Italian recipes }
+        description: { type: string, example: Traditional pizzas with classic Italian recipes, nullable: true }
     Ingredient:
       type: object
       required: [id, key, label]
@@ -84,13 +84,13 @@ components:
       properties:
         id: { type: integer, example: 1 }
         name: { type: string, example: Pizza Margherita }
-        description: { type: string, example: Classic Italian pizza }
+        description: { type: string, example: Classic Italian pizza, nullable: true }
         basePrice: { type: number, format: double, example: 25.00 }
-        minPrice: { type: number, format: double, example: 20.00 }
-        maxPrice: { type: number, format: double, example: 35.00 }
-        imageUrl: { type: string }
+        minPrice: { type: number, format: double, example: 20.00, nullable: true }
+        maxPrice: { type: number, format: double, example: 35.00, nullable: true }
+        imageUrl: { type: string, nullable: true }
         popularity: { type: integer }
-        ratingAverage: { type: number }
+        ratingAverage: { type: number, nullable: true }
         ratingCount: { type: integer }
         isCustomizable: { type: boolean }
         category: { $ref: '#/components/schemas/Category' }
@@ -114,8 +114,8 @@ components:
                   id: { type: integer }
                   price: { type: number }
                   isDefault: { type: boolean }
-                  doughType: { $ref: '#/components/schemas/DoughType' }
-                  sizeOption: { $ref: '#/components/schemas/SizeOption' }
+                  doughType: { $ref: '#/components/schemas/DoughType', nullable: true }
+                  sizeOption: { $ref: '#/components/schemas/SizeOption', nullable: true }
     PaginationMeta:
       type: object
       required: [page, limit, total, totalPages]

@@ -5,7 +5,7 @@ import swaggerUi from 'swagger-ui-express';
 import path from 'path';
 import yaml from 'yamljs';
 import { config } from './config';
-import { errorHandler } from './shared/middleware/errorHandler';
+import { errorHandler } from './middlewares/error-handler';
 
 // Import module routes
 import authRoutes from './modules/auth/route';

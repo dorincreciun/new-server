@@ -1,24 +1,27 @@
 import { Request, Response, NextFunction } from 'express';
 import { browseService } from './service';
-import { sendSuccess } from '../../shared/http/response';
-import { paths } from '../../docs/schema';
+import { sendSuccess } from '../../shared/api/http/response';
+import { components } from '../../docs/schema';
+
+type ProductResponse = components["schemas"]["ProductWithRelations"];
+type PaginationMeta = components["schemas"]["PaginationMeta"];
 
 export class BrowseController {
   async getProducts(
-    req: Request<any, any, any, paths['/browse/products']['get']['parameters']['query']>,
+    req: Request,
     res: Response,
     next: NextFunction
   ) {
     try {
       const { products, pagination } = await browseService.getProducts(req.query as any);
-      return sendSuccess(res, products, 'Products found', 200, pagination);
+      return sendSuccess<ProductResponse[], PaginationMeta>(res, products, 'Products found', 200, pagination);
     } catch (error) {
       next(error);
     }
   }
 
   async getFilters(
-    req: Request<any, any, any, paths['/browse/filters']['get']['parameters']['query']>,
+    req: Request,
     res: Response,
     next: NextFunction
   ) {

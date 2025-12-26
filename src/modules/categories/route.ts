@@ -1,14 +1,17 @@
 import { Request, Response, NextFunction, Router } from 'express';
 import prisma from '../../shared/prisma/client';
-import { sendSuccess } from '../../shared/http/response';
+import { sendSuccess } from '../../shared/api/http/response';
 import { NotFoundError, ConflictError } from '../../shared/http/errors';
-import { authMiddleware } from '../../shared/middleware/auth';
+import { authMiddleware } from '../../middlewares/auth';
+import { components } from '../../docs/schema';
+
+type CategoryResponse = components["schemas"]["Category"];
 
 export class CategoriesController {
   async list(req: Request, res: Response, next: NextFunction) {
     try {
       const categories = await prisma.category.findMany();
-      return sendSuccess(res, categories, 'Category list');
+      return sendSuccess<CategoryResponse[]>(res, categories, 'Category list');
     } catch (error) {
       next(error);
     }
@@ -21,7 +24,7 @@ export class CategoriesController {
 
       const category = await prisma.category.findUnique({ where: { slug } });
       if (!category) throw new NotFoundError('Category not found');
-      return sendSuccess(res, category, 'Category details');
+      return sendSuccess<CategoryResponse>(res, category, 'Category details');
     } catch (error) {
       next(error);
     }
@@ -38,7 +41,7 @@ export class CategoriesController {
       const category = await prisma.category.create({
         data: { name, slug, description }
       });
-      return sendSuccess(res, category, 'Category created', 201);
+      return sendSuccess<CategoryResponse>(res, category, 'Category created', 201);
     } catch (error) {
       next(error);
     }
@@ -58,7 +61,7 @@ export class CategoriesController {
         where: { slug },
         data: { name, description }
       });
-      return sendSuccess(res, updated, 'Category updated');
+      return sendSuccess<CategoryResponse>(res, updated, 'Category updated');
     } catch (error) {
       next(error);
     }

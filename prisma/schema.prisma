@@ -22,56 +22,58 @@ model User {
 }
 
 model RefreshToken {
-  id         Int       @id @default(autoincrement())
-  userId     Int
-  expiresAt  DateTime
-  createdAt  DateTime  @default(now())
-  ipAddress  String?
-  jti        String    @unique
-  revokedAt  DateTime?
-  tokenHash  String    @unique
-  userAgent  String?
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  ipAddress String?
+  jti       String    @unique
+  revokedAt DateTime?
+  tokenHash String    @unique
+  userAgent String?
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
 }
 
 // Categorii de pizza (ex: Pizza Clasice, Pizza Vegetariene, Pizza Picante)
 model Category {
-  id          Int        @id @default(autoincrement())
-  slug        String     @unique
-  name        String     @unique
-  description String?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id          Int       @id @default(autoincrement())
+  slug        String    @unique @db.VarChar(100)
+  name        String    @unique @db.VarChar(100)
+  description String?   @db.Text
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   products    Product[]
+
   @@index([name])
   @@index([slug])
 }
 
 // Produse pizza cu ingrediente, flaguri și variante (mărimi, tipuri de aluat)
 model Product {
-  id             Int           @id @default(autoincrement())
-  name         String        // ex: "Pizza Margherita"
-  description  String?       // ex: "Pizza clasică italiană cu sos de roșii, mozzarella și busuioc"
-  basePrice    Decimal       @db.Decimal(10, 2)  // Prețul de bază
-  minPrice     Decimal?      @db.Decimal(10, 2)  // Prețul minim (pentru mărimea mică)
-  maxPrice     Decimal?      @db.Decimal(10, 2)  // Prețul maxim (pentru mărimea mare)
-  imageUrl     String?       // URL imagine pizza
-  popularity   Int           @default(0)         // Popularitate (numărul de comenzi)
-  ratingAverage Decimal?     @db.Decimal(3, 2)   // Rating mediu (1-5)
-  ratingCount  Int           @default(0)         // Numărul de evaluări
-  isCustomizable Boolean     @default(false)     // Poate fi personalizată
-  releasedAt   DateTime?     // Data lansării
-  stock        Int           @default(0)         // Stoc disponibil
-  categoryId   Int           // Categoria de pizza
-  
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id             Int       @id @default(autoincrement())
+  name           String    @db.VarChar(255) // ex: "Pizza Margherita"
+  description    String?   @db.Text // ex: "Pizza clasică italiană cu sos de roșii, mozzarella și busuioc"
+  basePrice      Decimal   @db.Decimal(10, 2) // Prețul de bază
+  minPrice       Decimal?  @db.Decimal(10, 2) // Prețul minim (pentru mărimea mică)
+  maxPrice       Decimal?  @db.Decimal(10, 2) // Prețul maxim (pentru mărimea mare)
+  imageUrl       String?   @db.VarChar(512) // URL imagine pizza
+  popularity     Int       @default(0) // Popularitate (numărul de comenzi)
+  ratingAverage  Decimal?  @db.Decimal(3, 2) // Rating mediu (1-5)
+  ratingCount    Int       @default(0) // Numărul de evaluări
+  isCustomizable Boolean   @default(false) // Poate fi personalizată
+  releasedAt     DateTime? @default(now()) // Data lansării
+  stock          Int       @default(0) // Stoc disponibil
+  categoryId     Int // Categoria de pizza
 
-  category     Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  flags        ProductFlag[]      // Flaguri (vegetarian, picant, premium, etc.)
-  ingredients  ProductIngredient[] // Ingrediente (mozzarella, salam, ciuperci, etc.)
-  variants     ProductVariant[]    // Variante (mărimi și tipuri de aluat)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  category    Category            @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  flags       ProductFlag[] // Flaguri (vegetarian, picant, premium, etc.)
+  ingredients ProductIngredient[] // Ingrediente (mozzarella, salam, ciuperci, etc.)
+  variants    ProductVariant[] // Variante (mărimi și tipuri de aluat)
 
   @@index([categoryId])
   @@index([name])
@@ -80,15 +82,18 @@ model Product {
   @@index([ratingAverage])
   @@index([releasedAt])
   @@index([basePrice])
+  @@index([minPrice])
+  @@index([maxPrice])
 }
 
 // Flaguri pentru filtrare (ex: vegetarian, picant, premium, popular)
 model Flag {
-  id        Int      @id @default(autoincrement())
-  key       String   @unique  // ex: "vegetarian", "picant", "premium"
-  label     String?           // ex: "Vegetarian", "Picant", "Premium"
-  createdAt DateTime @default(now())
+  id        Int           @id @default(autoincrement())
+  key       String        @unique @db.VarChar(50) // ex: "vegetarian", "picant", "premium"
+  label     String?       @db.VarChar(100) // ex: "Vegetarian", "Picant", "Premium"
+  createdAt DateTime      @default(now())
   products  ProductFlag[]
+
   @@index([key])
 }
 
@@ -97,69 +102,77 @@ model ProductFlag {
   flagId    Int
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   flag      Flag    @relation(fields: [flagId], references: [id], onDelete: Cascade)
+
   @@id([productId, flagId])
   @@index([flagId])
+  @@index([productId])
 }
 
 // Ingrediente pentru pizza (ex: mozzarella, salam, ciuperci, măsline)
 model Ingredient {
-  id        Int      @id @default(autoincrement())
-  key       String   @unique  // ex: "mozzarella", "salam", "ciuperci"
-  label     String?           // ex: "Mozzarella", "Salam", "Ciuperci"
-  createdAt DateTime @default(now())
+  id        Int                 @id @default(autoincrement())
+  key       String              @unique @db.VarChar(50) // ex: "mozzarella", "salam", "ciuperci"
+  label     String?             @db.VarChar(100) // ex: "Mozzarella", "Salam", "Ciuperci"
+  createdAt DateTime            @default(now())
   products  ProductIngredient[]
+
   @@index([key])
 }
 
 model ProductIngredient {
-  productId   Int
+  productId    Int
   ingredientId Int
-  product     Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
-  ingredient  Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+
   @@id([productId, ingredientId])
   @@index([ingredientId])
+  @@index([productId])
 }
 
 // Tipuri de aluat pentru pizza (ex: clasic, subțire, gros, integral)
 model DoughType {
-  id        Int      @id @default(autoincrement())
-  key       String   @unique  // ex: "clasic", "subtire", "gros"
-  label     String?           // ex: "Aluat Clasic", "Aluat Subțire", "Aluat Gros"
-  createdAt DateTime @default(now())
+  id        Int              @id @default(autoincrement())
+  key       String           @unique @db.VarChar(50) // ex: "clasic", "subtire", "gros"
+  label     String?          @db.VarChar(100) // ex: "Aluat Clasic", "Aluat Subțire", "Aluat Gros"
+  createdAt DateTime         @default(now())
   variants  ProductVariant[]
+
   @@index([key])
 }
 
 // Mărimi pentru pizza (ex: mică, medie, mare, familie)
 model SizeOption {
-  id        Int      @id @default(autoincrement())
-  key       String   @unique  // ex: "mica", "medie", "mare", "familie"
-  label     String?           // ex: "Mică (25cm)", "Medie (30cm)", "Mare (35cm)"
-  createdAt DateTime @default(now())
+  id        Int              @id @default(autoincrement())
+  key       String           @unique @db.VarChar(50) // ex: "mica", "medie", "mare", "familie"
+  label     String?          @db.VarChar(100) // ex: "Mică (25cm)", "Medie (30cm)", "Mare (35cm)"
+  createdAt DateTime         @default(now())
   variants  ProductVariant[]
+
   @@index([key])
 }
 
 // Variante de produse (combinații de mărime și tip de aluat cu prețuri diferite)
 model ProductVariant {
-  id        Int        @id @default(autoincrement())
-  productId Int        // Pizza de bază
-  price     Decimal    @db.Decimal(10, 2)  // Prețul pentru această variantă
-  stock     Int        @default(0)         // Stoc disponibil
-  isDefault Boolean    @default(false)     // Varianta implicită
-  doughId   Int?       // Tipul de aluat (opțional)
-  sizeId    Int?       // Mărimea (opțional)
-  sku       String?    @unique             // Cod unic produs
+  id        Int     @id @default(autoincrement())
+  productId Int // Pizza de bază
+  price     Decimal @db.Decimal(10, 2) // Prețul pentru această variantă
+  stock     Int     @default(0) // Stoc disponibil
+  isDefault Boolean @default(false) // Varianta implicită
+  doughId   Int? // Tipul de aluat (opțional)
+  sizeId    Int? // Mărimea (opțional)
+  sku       String? @unique @db.VarChar(100) // Cod unic produs
 
-  product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
-  dough     DoughType? @relation(fields: [doughId], references: [id])
-  size      SizeOption? @relation(fields: [sizeId], references: [id])
+  product   Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  dough     DoughType?  @relation(fields: [doughId], references: [id], onDelete: SetNull)
+  size      SizeOption? @relation(fields: [sizeId], references: [id], onDelete: SetNull)
   cartItems CartItem[]
 
   @@index([productId])
   @@index([price])
   @@index([doughId])
   @@index([sizeId])
+  @@index([sku])
 }
 
 // Coș de cumpărături per utilizator (one-to-one)
@@ -174,16 +187,16 @@ model Cart {
 
 // Linie de coș – legată de o variantă de produs (size/dough) și cantitate
 model CartItem {
-  id               Int             @id @default(autoincrement())
+  id               Int      @id @default(autoincrement())
   cartId           Int
   productVariantId Int
-  quantity         Int             @default(1)
-  unitPrice        Decimal         @db.Decimal(10, 2)
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  quantity         Int      @default(1)
+  unitPrice        Decimal  @db.Decimal(10, 2)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  cart             Cart            @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  productVariant   ProductVariant  @relation(fields: [productVariantId], references: [id], onDelete: Cascade)
+  cart           Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productVariant ProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Cascade)
 
   @@index([cartId])
   @@index([productVariantId])

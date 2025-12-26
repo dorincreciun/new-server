@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { cartService } from './service';
-import { sendSuccess } from '../../shared/http/response';
+import { sendSuccess } from '../../shared/api/http/response';
 import { paths } from '../../docs/schema';
 
 export class CartController {

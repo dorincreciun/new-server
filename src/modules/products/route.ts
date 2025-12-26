@@ -1,22 +1,26 @@
 import { Request, Response, NextFunction, Router } from 'express';
 import prisma from '../../shared/prisma/client';
-import { sendSuccess } from '../../shared/http/response';
+import { sendSuccess } from '../../shared/api/http/response';
 import { NotFoundError } from '../../shared/http/errors';
-import { authMiddleware } from '../../shared/middleware/auth';
+import { authMiddleware } from '../../middlewares/auth';
+import { formatProduct } from '../../shared/utils/formatters';
+import { components } from '../../docs/schema';
+
+type ProductResponse = components["schemas"]["ProductWithRelations"];
 
 export class ProductsController {
   async list(req: Request, res: Response, next: NextFunction) {
     try {
       const products = await prisma.product.findMany({
-        include: { category: true }
+        include: {
+          category: true,
+          flags: { include: { flag: true } },
+          ingredients: { include: { ingredient: true } },
+          variants: { include: { dough: true, size: true } },
+        }
       });
-      const formatted = products.map(p => ({
-        ...p,
-        basePrice: Number(p.basePrice),
-        minPrice: p.minPrice ? Number(p.minPrice) : null,
-        maxPrice: p.maxPrice ? Number(p.maxPrice) : null,
-      }));
-      return sendSuccess(res, formatted, 'Product list');
+      const formatted = products.map(formatProduct);
+      return sendSuccess<ProductResponse[]>(res, formatted, 'Product list');
     } catch (error) {
       next(error);
     }
@@ -36,23 +40,9 @@ export class ProductsController {
       });
       if (!product) throw new NotFoundError('Product not found');
       
-      const formatted = {
-        ...product,
-        basePrice: Number(product.basePrice),
-        minPrice: product.minPrice ? Number(product.minPrice) : null,
-        maxPrice: product.maxPrice ? Number(product.maxPrice) : null,
-        ratingAverage: product.ratingAverage ? Number(product.ratingAverage) : null,
-        flags: product.flags.map(f => f.flag),
-        ingredients: product.ingredients.map(i => i.ingredient),
-        variants: product.variants.map(v => ({
-          ...v,
-          price: Number(v.price),
-          doughType: v.dough,
-          sizeOption: v.size,
-        })),
-      };
+      const formatted = formatProduct(product);
       
-      return sendSuccess(res, formatted, 'Product details');
+      return sendSuccess<ProductResponse>(res, formatted, 'Product details');
     } catch (error) {
       next(error);
     }

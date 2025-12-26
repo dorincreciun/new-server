@@ -21,8 +21,8 @@ components:
       required: [message, data]
       properties:
         message: { type: string, example: Operation successful }
-        data: { type: object }
-        meta: { type: object }
+        data: { type: object, additionalProperties: true, nullable: true }
+        meta: { type: object, nullable: true }
     ErrorResponse:
       type: object
       required: [message, code]
@@ -87,11 +87,11 @@ components:
         name: { type: string, example: Pizza Margherita }
         description: { type: string, example: Classic Italian pizza }
         basePrice: { type: number, format: double, example: 25.00 }
-        minPrice: { type: number, format: double, example: 20.00 }
-        maxPrice: { type: number, format: double, example: 35.00 }
-        imageUrl: { type: string }
+        minPrice: { type: number, format: double, example: 20.00, nullable: true }
+        maxPrice: { type: number, format: double, example: 35.00, nullable: true }
+        imageUrl: { type: string, nullable: true }
         popularity: { type: integer }
-        ratingAverage: { type: number }
+        ratingAverage: { type: number, nullable: true }
         ratingCount: { type: integer }
         isCustomizable: { type: boolean }
         category: { $ref: '#/components/schemas/Category' }
@@ -115,8 +115,8 @@ components:
                   id: { type: integer }
                   price: { type: number }
                   isDefault: { type: boolean }
-                  doughType: { $ref: '#/components/schemas/DoughType' }
-                  sizeOption: { $ref: '#/components/schemas/SizeOption' }
+                  doughType: { allOf: [{ $ref: '#/components/schemas/DoughType' }], nullable: true }
+                  sizeOption: { allOf: [{ $ref: '#/components/schemas/SizeOption' }], nullable: true }
     PaginationMeta:
       type: object
       required: [page, limit, total, totalPages]

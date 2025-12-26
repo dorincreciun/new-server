@@ -1,5 +1,6 @@
 import prisma from '../../shared/prisma/client';
 import { NotFoundError } from '../../shared/http/errors';
+import { formatDecimal } from '../../shared/utils/formatters';
 
 export class CartService {
   async getOrCreateCart(userId: number) {
@@ -32,7 +33,7 @@ export class CartService {
         id: it.productVariant.product.id,
         name: it.productVariant.product.name,
         description: it.productVariant.product.description || '',
-        basePrice: Number(it.productVariant.product.basePrice),
+        basePrice: formatDecimal(it.productVariant.product.basePrice),
         imageUrl: it.productVariant.product.imageUrl || '',
         category: it.productVariant.product.category,
       },
@@ -40,13 +41,13 @@ export class CartService {
         id: it.productVariant.id,
         doughType: it.productVariant.dough,
         sizeOption: it.productVariant.size,
-        price: Number(it.productVariant.price),
+        price: formatDecimal(it.productVariant.price),
       },
       quantity: it.quantity,
-      lineTotal: Number(it.unitPrice) * it.quantity,
+      lineTotal: formatDecimal(it.unitPrice) * it.quantity,
     }));
 
-    const total = itemsFormatted.reduce((sum, it) => sum + it.lineTotal, 0);
+    const total = itemsFormatted.reduce((sum, it) => sum + (it.lineTotal || 0), 0);
 
     return {
       id: cart.id,
