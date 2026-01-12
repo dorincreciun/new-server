@@ -38,9 +38,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: components["schemas"]["UserDTO"];
-                        };
+                        "application/json": components["schemas"]["SuccessResponseUser"];
                     };
                 };
                 400: components["responses"]["BadRequest"];
@@ -88,9 +86,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: components["schemas"]["UserDTO"];
-                        };
+                        "application/json": components["schemas"]["SuccessResponseUser"];
                     };
                 };
                 401: components["responses"]["Unauthorized"];
@@ -128,9 +124,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: components["schemas"]["UserDTO"];
-                        };
+                        "application/json": components["schemas"]["SuccessResponseUser"];
                     };
                 };
                 401: components["responses"]["Unauthorized"];
@@ -166,9 +160,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: components["schemas"]["UserDTO"];
-                        };
+                        "application/json": components["schemas"]["SuccessResponseUser"];
                     };
                 };
                 401: components["responses"]["Unauthorized"];
@@ -208,7 +200,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["SuccessResponse"];
+                        "application/json": components["schemas"]["SuccessNoData"];
                     };
                 };
                 500: components["responses"]["InternalError"];
@@ -243,9 +235,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: components["schemas"]["Category"][];
-                        };
+                        "application/json": components["schemas"]["SuccessResponseCategoryList"];
                     };
                 };
                 500: components["responses"]["InternalError"];
@@ -276,9 +266,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: components["schemas"]["Category"];
-                        };
+                        "application/json": components["schemas"]["SuccessResponseCategory"];
                     };
                 };
                 401: components["responses"]["Unauthorized"];
@@ -319,9 +307,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: components["schemas"]["Category"];
-                        };
+                        "application/json": components["schemas"]["SuccessResponseCategory"];
                     };
                 };
                 404: components["responses"]["NotFound"];
@@ -348,7 +334,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["SuccessResponse"];
+                        "application/json": components["schemas"]["SuccessNoData"];
                     };
                 };
                 401: components["responses"]["Unauthorized"];
@@ -384,9 +370,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: components["schemas"]["Category"];
-                        };
+                        "application/json": components["schemas"]["SuccessResponseCategory"];
                     };
                 };
                 401: components["responses"]["Unauthorized"];
@@ -421,9 +405,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: components["schemas"]["Product"][];
-                        };
+                        "application/json": components["schemas"]["SuccessResponseProductList"];
                     };
                 };
                 500: components["responses"]["InternalError"];
@@ -455,9 +437,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: components["schemas"]["Product"];
-                        };
+                        "application/json": components["schemas"]["SuccessResponseProduct"];
                     };
                 };
                 401: components["responses"]["Unauthorized"];
@@ -497,9 +477,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: components["schemas"]["ProductWithRelations"];
-                        };
+                        "application/json": components["schemas"]["SuccessResponseProductDetails"];
                     };
                 };
                 404: components["responses"]["NotFound"];
@@ -526,7 +504,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["SuccessResponse"];
+                        "application/json": components["schemas"]["SuccessNoData"];
                     };
                 };
                 401: components["responses"]["Unauthorized"];
@@ -559,9 +537,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: components["schemas"]["Product"];
-                        };
+                        "application/json": components["schemas"]["SuccessResponseProduct"];
                     };
                 };
                 401: components["responses"]["Unauthorized"];
@@ -590,6 +566,12 @@ export interface paths {
                     limit?: number;
                     sort?: "price" | "rating" | "popularity" | "newest";
                     order?: "asc" | "desc";
+                    priceMin?: number;
+                    priceMax?: number;
+                    flags?: string[];
+                    ingredients?: string[];
+                    dough?: string;
+                    size?: string;
                 };
                 header?: never;
                 path?: never;
@@ -603,10 +585,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: components["schemas"]["ProductWithRelations"][];
-                            meta?: components["schemas"]["PaginationMeta"];
-                        };
+                        "application/json": components["schemas"]["SuccessResponseProductList"];
                     };
                 };
                 500: components["responses"]["InternalError"];
@@ -645,20 +624,47 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: {
-                                price?: {
-                                    min?: number;
-                                    max?: number;
-                                };
-                                categories?: {
-                                    id: number;
-                                    slug: string;
-                                    name: string;
-                                    count: number;
-                                }[];
-                            };
-                        };
+                        "application/json": components["schemas"]["SuccessResponseFilters"];
+                    };
+                };
+                500: components["responses"]["InternalError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/browse/suggest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search suggestions (autocomplete) */
+        get: {
+            parameters: {
+                query: {
+                    q: string;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SuccessResponseSuggestions"];
                     };
                 };
                 500: components["responses"]["InternalError"];
@@ -695,9 +701,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: components["schemas"]["Cart"];
-                        };
+                        "application/json": components["schemas"]["SuccessResponseCart"];
                     };
                 };
                 401: components["responses"]["Unauthorized"];
@@ -722,7 +726,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["SuccessResponse"];
+                        "application/json": components["schemas"]["SuccessNoData"];
                     };
                 };
                 401: components["responses"]["Unauthorized"];
@@ -767,9 +771,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: components["schemas"]["Cart"];
-                        };
+                        "application/json": components["schemas"]["SuccessResponseCart"];
                     };
                 };
                 401: components["responses"]["Unauthorized"];
@@ -812,9 +814,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: components["schemas"]["Cart"];
-                        };
+                        "application/json": components["schemas"]["SuccessResponseCart"];
                     };
                 };
                 401: components["responses"]["Unauthorized"];
@@ -848,9 +848,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: components["schemas"]["Cart"];
-                        };
+                        "application/json": components["schemas"]["SuccessResponseCart"];
                     };
                 };
                 401: components["responses"]["Unauthorized"];
@@ -859,6 +857,147 @@ export interface paths {
                 500: components["responses"]["InternalError"];
             };
         };
+        trace?: never;
+    };
+    "/checkout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create order from cart */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        customer: {
+                            name: string;
+                            /** Format: email */
+                            email?: string;
+                            phone: string;
+                        };
+                        address: {
+                            city: string;
+                            street: string;
+                            house: string;
+                            apartment?: string;
+                            comment?: string;
+                        };
+                        /** @enum {string} */
+                        paymentMethod?: "CASH" | "CARD_ON_DELIVERY" | "ONLINE";
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SuccessResponseOrder"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                422: components["responses"]["ValidationError"];
+                500: components["responses"]["InternalError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List user orders */
+        get: {
+            parameters: {
+                query?: {
+                    page?: number;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SuccessResponseOrderList"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                500: components["responses"]["InternalError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orders/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Order details */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SuccessResponseOrder"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                404: components["responses"]["NotFound"];
+                500: components["responses"]["InternalError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/taxonomies/ingredients": {
@@ -884,9 +1023,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: components["schemas"]["Ingredient"][];
-                        };
+                        "application/json": components["schemas"]["SuccessResponseIngredientList"];
                     };
                 };
                 500: components["responses"]["InternalError"];
@@ -923,9 +1060,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: components["schemas"]["Flag"][];
-                        };
+                        "application/json": components["schemas"]["SuccessResponseFlagList"];
                     };
                 };
                 500: components["responses"]["InternalError"];
@@ -962,9 +1097,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: components["schemas"]["DoughType"][];
-                        };
+                        "application/json": components["schemas"]["SuccessResponseDoughTypeList"];
                     };
                 };
                 500: components["responses"]["InternalError"];
@@ -1001,9 +1134,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: components["schemas"]["SizeOption"][];
-                        };
+                        "application/json": components["schemas"]["SuccessResponseSizeOptionList"];
                     };
                 };
                 500: components["responses"]["InternalError"];
@@ -1021,21 +1152,26 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        SuccessResponse: {
-            /** @example Operation successful */
+        ApiError: {
+            /** @example Validation failed */
             message: string;
-            data: Record<string, never> | null;
-            meta?: components["schemas"]["PaginationMeta"];
-        };
-        ErrorResponse: {
-            /** @example Validation error */
-            message: string;
-            /** @example VALIDATION_ERROR */
-            code: string;
+            /**
+             * @example VALIDATION_ERROR
+             * @enum {string}
+             */
+            code: "VALIDATION_ERROR" | "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "INTERNAL_ERROR";
             details?: {
+                /** @example email */
                 field?: string;
+                /** @example Invalid email format */
                 message?: string;
             }[];
+        };
+        SuccessNoData: {
+            /** @example Operation successful */
+            message: string;
+            /** @example null */
+            data: Record<string, never> | null;
         };
         UserDTO: {
             /** @example 1 */
@@ -1055,8 +1191,13 @@ export interface components {
             slug: string;
             /** @example Classic Pizzas */
             name: string;
-            /** @example Traditional pizzas with classic Italian recipes */
+            /** @example Traditional pizzas */
             description?: string | null;
+            /**
+             * @description Product count in this category
+             * @example 15
+             */
+            count?: number;
         };
         Ingredient: {
             /** @example 1 */
@@ -1065,6 +1206,11 @@ export interface components {
             key: string;
             /** @example Mozzarella */
             label: string;
+            /**
+             * @description Optional count for filters
+             * @example 5
+             */
+            count?: number;
         };
         Flag: {
             /** @example 1 */
@@ -1073,6 +1219,8 @@ export interface components {
             key: string;
             /** @example Vegetarian */
             label: string;
+            /** @example 8 */
+            count?: number;
         };
         DoughType: {
             /** @example 1 */
@@ -1090,38 +1238,35 @@ export interface components {
             /** @example Medium (30cm) */
             label: string;
         };
-        Product: {
+        ProductCard: {
             /** @example 1 */
             id: number;
             /** @example Pizza Margherita */
             name: string;
-            /** @example Classic Italian pizza */
-            description?: string | null;
-            /**
-             * Format: double
-             * @example 25
-             */
-            basePrice: number;
-            /**
-             * Format: double
-             * @example 20
-             */
-            minPrice?: number | null;
-            /**
-             * Format: double
-             * @example 35
-             */
+            imageUrl: string | null;
+            /** @example 25.5 */
+            minPrice: number;
+            /** @example 45 */
             maxPrice?: number | null;
-            imageUrl?: string | null;
-            popularity?: number;
             ratingAverage?: number | null;
             ratingCount?: number;
+            popularity?: number;
             isCustomizable?: boolean;
-            category?: components["schemas"]["Category"];
+            category?: {
+                name?: string;
+                slug?: string;
+            };
         };
-        ProductWithRelations: components["schemas"]["Product"] & {
-            flags?: components["schemas"]["Flag"][];
+        ProductDetails: components["schemas"]["ProductCard"] & {
+            /** @description Product description */
+            description?: string | null;
+            /**
+             * @description Number of items in user's cart (only present if user is authenticated)
+             * @example 2
+             */
+            quantityInCart?: number | null;
             ingredients?: components["schemas"]["Ingredient"][];
+            flags?: components["schemas"]["Flag"][];
             variants?: {
                 id: number;
                 price: number;
@@ -1140,28 +1285,121 @@ export interface components {
             /** @example 6 */
             totalPages: number;
         };
-        CartItem: {
-            /** @example 501 */
+        Suggestion: {
             id: number;
-            product?: components["schemas"]["Product"];
+            name: string;
+            categorySlug?: string | null;
+            imageUrl?: string | null;
+        };
+        CartItem: {
+            id: number;
+            quantity: number;
+            lineTotal: number;
+            product: {
+                id?: number;
+                name?: string;
+                imageUrl?: string | null;
+            };
             variant?: {
-                id: number;
+                id?: number;
+                price?: number;
                 doughType?: components["schemas"]["DoughType"];
                 sizeOption?: components["schemas"]["SizeOption"];
-                price: number;
             };
-            /** @example 2 */
-            quantity: number;
-            /** @example 240 */
-            lineTotal: number;
         };
-        Cart: {
-            /** @example 1 */
+        CartDTO: {
             id: number;
             items: components["schemas"]["CartItem"][];
             subtotal?: number;
             discounts?: number;
             total: number;
+        };
+        OrderDTO: {
+            id: number;
+            /** @enum {string} */
+            status: "PENDING" | "PAID" | "DELIVERING" | "COMPLETED" | "CANCELLED";
+            total: number;
+            subtotal?: number;
+            discounts?: number;
+            /** Format: date-time */
+            createdAt: string;
+            items: {
+                id?: number;
+                productName?: string;
+                variantName?: string | null;
+                quantity?: number;
+                unitPrice?: number;
+                imageUrl?: string | null;
+            }[];
+            customer?: {
+                name?: string;
+                email?: string | null;
+                phone?: string;
+            };
+            address?: {
+                city?: string;
+                street?: string;
+                house?: string;
+                apartment?: string | null;
+                comment?: string | null;
+            };
+        };
+        SuccessResponseUser: components["schemas"]["SuccessNoData"] & {
+            data?: components["schemas"]["UserDTO"];
+        };
+        SuccessResponseCategoryList: components["schemas"]["SuccessNoData"] & {
+            data?: components["schemas"]["Category"][];
+        };
+        SuccessResponseCategory: components["schemas"]["SuccessNoData"] & {
+            data?: components["schemas"]["Category"];
+        };
+        SuccessResponseProductList: components["schemas"]["SuccessNoData"] & {
+            data?: components["schemas"]["ProductCard"][];
+            meta?: components["schemas"]["PaginationMeta"];
+        };
+        SuccessResponseProductDetails: components["schemas"]["SuccessNoData"] & {
+            data?: components["schemas"]["ProductDetails"];
+        };
+        SuccessResponseProduct: components["schemas"]["SuccessNoData"] & {
+            data?: components["schemas"]["ProductCard"];
+        };
+        SuccessResponseCart: components["schemas"]["SuccessNoData"] & {
+            data?: components["schemas"]["CartDTO"];
+        };
+        SuccessResponseOrder: components["schemas"]["SuccessNoData"] & {
+            data?: components["schemas"]["OrderDTO"];
+        };
+        SuccessResponseOrderList: components["schemas"]["SuccessNoData"] & {
+            data?: components["schemas"]["OrderDTO"][];
+            meta?: components["schemas"]["PaginationMeta"];
+        };
+        SuccessResponseIngredientList: components["schemas"]["SuccessNoData"] & {
+            data?: components["schemas"]["Ingredient"][];
+        };
+        SuccessResponseFlagList: components["schemas"]["SuccessNoData"] & {
+            data?: components["schemas"]["Flag"][];
+        };
+        SuccessResponseDoughTypeList: components["schemas"]["SuccessNoData"] & {
+            data?: components["schemas"]["DoughType"][];
+        };
+        SuccessResponseSizeOptionList: components["schemas"]["SuccessNoData"] & {
+            data?: components["schemas"]["SizeOption"][];
+        };
+        SuccessResponseFilters: components["schemas"]["SuccessNoData"] & {
+            data?: {
+                price?: {
+                    min?: number;
+                    max?: number;
+                };
+                categories?: components["schemas"]["Category"][];
+                ingredients?: components["schemas"]["Ingredient"][];
+                flags?: components["schemas"]["Flag"][];
+                doughTypes?: components["schemas"]["DoughType"][];
+                sizeOptions?: components["schemas"]["SizeOption"][];
+            };
+        };
+        SuccessResponseSuggestions: components["schemas"]["SuccessNoData"] & {
+            data?: components["schemas"]["Suggestion"][];
         };
     };
     responses: {
@@ -1171,7 +1409,7 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                "application/json": components["schemas"]["ErrorResponse"];
+                "application/json": components["schemas"]["ApiError"];
             };
         };
         /** @description Unauthorized */
@@ -1180,7 +1418,7 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                "application/json": components["schemas"]["ErrorResponse"];
+                "application/json": components["schemas"]["ApiError"];
             };
         };
         /** @description Forbidden */
@@ -1189,7 +1427,7 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                "application/json": components["schemas"]["ErrorResponse"];
+                "application/json": components["schemas"]["ApiError"];
             };
         };
         /** @description Resource not found */
@@ -1198,7 +1436,7 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                "application/json": components["schemas"]["ErrorResponse"];
+                "application/json": components["schemas"]["ApiError"];
             };
         };
         /** @description Conflict */
@@ -1207,7 +1445,7 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                "application/json": components["schemas"]["ErrorResponse"];
+                "application/json": components["schemas"]["ApiError"];
             };
         };
         /** @description Validation error */
@@ -1216,7 +1454,7 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                "application/json": components["schemas"]["ErrorResponse"];
+                "application/json": components["schemas"]["ApiError"];
             };
         };
         /** @description Internal server error */
@@ -1225,7 +1463,7 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                "application/json": components["schemas"]["ErrorResponse"];
+                "application/json": components["schemas"]["ApiError"];
             };
         };
     };

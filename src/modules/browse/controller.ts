@@ -3,7 +3,7 @@ import { browseService } from './service';
 import { sendSuccess } from '../../shared/api/http/response';
 import { components } from '../../docs/schema';
 
-type ProductResponse = components["schemas"]["ProductWithRelations"];
+type ProductResponse = components["schemas"]["ProductDetails"];
 type PaginationMeta = components["schemas"]["PaginationMeta"];
 
 export class BrowseController {

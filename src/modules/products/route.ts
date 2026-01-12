@@ -6,7 +6,7 @@ import { authMiddleware } from '../../middlewares/auth';
 import { formatProduct } from '../../shared/utils/formatters';
 import { components } from '../../docs/schema';
 
-type ProductResponse = components["schemas"]["ProductWithRelations"];
+type ProductResponse = components["schemas"]["ProductDetails"];
 
 export class ProductsController {
   async list(req: Request, res: Response, next: NextFunction) {

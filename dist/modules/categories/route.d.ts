@@ -1,10 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 export declare class CategoriesController {
-    list(req: Request, res: Response, next: NextFunction): Promise<Response<any, Record<string, any>> | undefined>;
-    getOne(req: Request, res: Response, next: NextFunction): Promise<Response<any, Record<string, any>> | undefined>;
-    create(req: Request, res: Response, next: NextFunction): Promise<Response<any, Record<string, any>> | undefined>;
-    update(req: Request, res: Response, next: NextFunction): Promise<Response<any, Record<string, any>> | undefined>;
-    remove(req: Request, res: Response, next: NextFunction): Promise<Response<any, Record<string, any>> | undefined>;
+    list(req: Request, res: Response, next: NextFunction): Promise<any>;
+    getOne(req: Request, res: Response, next: NextFunction): Promise<any>;
+    create(req: Request, res: Response, next: NextFunction): Promise<any>;
+    update(req: Request, res: Response, next: NextFunction): Promise<any>;
+    remove(req: Request, res: Response, next: NextFunction): Promise<any>;
 }
 declare const router: import("express-serve-static-core").Router;
 export default router;

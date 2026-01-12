@@ -1,0 +1,1 @@
+{"version":3,"file":"product-details.d.ts","sourceRoot":"","sources":["../../src/types/product-details.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,UAAU,EAAE,MAAM,gBAAgB,CAAC;AAEjD;;;GAGG;AACH,MAAM,MAAM,cAAc,GAAG,UAAU,CAAC,SAAS,CAAC,CAAC,gBAAgB,CAAC,CAAC;AAErE;;;GAGG;AACH,MAAM,WAAW,sBAAuB,SAAQ,cAAc;IAC5D,cAAc,CAAC,EAAE,MAAM,GAAG,IAAI,CAAC;CAChC"}

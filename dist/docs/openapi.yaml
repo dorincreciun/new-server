@@ -117,7 +117,15 @@ components:
         - $ref: '#/components/schemas/ProductCard'
         - type: object
           properties:
-            description: { type: string, nullable: true }
+            description: 
+              type: string
+              nullable: true
+              description: Product description
+            quantityInCart:
+              type: integer
+              nullable: true
+              description: Number of items in user's cart (only present if user is authenticated)
+              example: 2
             ingredients:
               type: array
               items: { $ref: '#/components/schemas/Ingredient' }

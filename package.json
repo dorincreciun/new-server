@@ -4,11 +4,13 @@
   "main": "index.js",
   "scripts": {
     "dev": "ts-node src/index.ts",
-    "build": "tsc -p tsconfig.json && xcopy src\\docs dist\\docs /E /I /Y",
+    "build": "tsc -p tsconfig.json && npm run update:docs",
     "start": "node dist/index.js",
     "test": "jest",
     "generate:openapi": "ts-node scripts/generate-openapi.ts",
-    "generate:types": "openapi-typescript src/docs/openapi.yaml -o src/docs/schema.d.ts"
+    "generate:types": "openapi-typescript src/docs/openapi.yaml -o src/docs/schema.d.ts",
+    "update:docs": "ts-node scripts/update-docs.ts",
+    "generate:client": "ts-node scripts/generate-client.ts"
   },
   "keywords": [],
   "author": "",
