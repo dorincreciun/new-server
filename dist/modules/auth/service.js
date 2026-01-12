@@ -153,6 +153,19 @@ class AuthService {
         });
         return { accessToken, refreshToken };
     }
+    verifyAccessToken(token) {
+        try {
+            const payload = jwt.verify(token, config_1.config.jwtAccessSecret);
+            return {
+                id: payload.sub,
+                email: payload.email,
+                name: payload.name || '',
+            };
+        }
+        catch (error) {
+            throw new errors_1.UnauthorizedError('Token invalid sau expirat');
+        }
+    }
 }
 exports.AuthService = AuthService;
 exports.authService = new AuthService();

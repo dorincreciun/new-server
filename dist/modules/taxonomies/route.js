@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.TaxonomiesController = void 0;
 const express_1 = require("express");
 const client_1 = __importDefault(require("../../shared/prisma/client"));
-const response_1 = require("../../shared/api/http/response");
+const response_1 = require("../../shared/http/response");
 class TaxonomiesController {
     async getIngredients(req, res, next) {
         try {

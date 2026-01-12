@@ -13,7 +13,7 @@ export declare class CartService {
                 id: number;
                 name: string;
                 description: string;
-                basePrice: any;
+                basePrice: number;
                 imageUrl: string;
                 category: {
                     name: string;
@@ -38,7 +38,7 @@ export declare class CartService {
                     key: string;
                     label: string | null;
                 } | null;
-                price: any;
+                price: number;
             };
             quantity: number;
             lineTotal: number;
@@ -55,7 +55,7 @@ export declare class CartService {
                 id: number;
                 name: string;
                 description: string;
-                basePrice: any;
+                basePrice: number;
                 imageUrl: string;
                 category: {
                     name: string;
@@ -80,7 +80,7 @@ export declare class CartService {
                     key: string;
                     label: string | null;
                 } | null;
-                price: any;
+                price: number;
             };
             quantity: number;
             lineTotal: number;
@@ -97,7 +97,7 @@ export declare class CartService {
                 id: number;
                 name: string;
                 description: string;
-                basePrice: any;
+                basePrice: number;
                 imageUrl: string;
                 category: {
                     name: string;
@@ -122,7 +122,7 @@ export declare class CartService {
                     key: string;
                     label: string | null;
                 } | null;
-                price: any;
+                price: number;
             };
             quantity: number;
             lineTotal: number;
@@ -139,7 +139,7 @@ export declare class CartService {
                 id: number;
                 name: string;
                 description: string;
-                basePrice: any;
+                basePrice: number;
                 imageUrl: string;
                 category: {
                     name: string;
@@ -164,7 +164,7 @@ export declare class CartService {
                     key: string;
                     label: string | null;
                 } | null;
-                price: any;
+                price: number;
             };
             quantity: number;
             lineTotal: number;

@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.authController = exports.AuthController = void 0;
 const service_1 = require("./service");
-const response_1 = require("../../shared/api/http/response");
+const response_1 = require("../../shared/http/response");
 const cookieUtils_1 = require("../../utils/cookieUtils");
 const errors_1 = require("../../shared/http/errors");
 class AuthController {

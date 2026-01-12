@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.browseController = exports.BrowseController = void 0;
 const service_1 = require("./service");
-const response_1 = require("../../shared/api/http/response");
+const response_1 = require("../../shared/http/response");
 class BrowseController {
     async getProducts(req, res, next) {
         try {

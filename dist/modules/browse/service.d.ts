@@ -1,7 +1,7 @@
 import { BrowseProductsInput, BrowseFiltersInput } from './dto';
 export declare class BrowseService {
     getProducts(query: BrowseProductsInput): Promise<{
-        products: unknown[];
+        products: any[];
         pagination: {
             page: number;
             limit: number;

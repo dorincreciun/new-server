@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { authService } from './service';
-import { sendSuccess } from '../../shared/api/http/response';
+import { sendSuccess } from '../../shared/http/response';
 import { setAuthCookies, clearAuthCookies, readRefreshToken } from '../../utils/cookieUtils';
 import { UnauthorizedError } from '../../shared/http/errors';
 import { components } from '../../docs/schema';

@@ -13,8 +13,8 @@ export declare const browseProductsSchema: z.ZodObject<{
     page: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
     limit: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
     sort: z.ZodDefault<z.ZodEnum<{
-        price: "price";
         popularity: "popularity";
+        price: "price";
         rating: "rating";
         newest: "newest";
     }>>;

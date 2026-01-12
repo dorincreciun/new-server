@@ -24,6 +24,7 @@ export declare class AuthService {
     logout(userId: number): Promise<void>;
     revokeAllRefreshTokens(userId: number): Promise<void>;
     private generateTokenPair;
+    verifyAccessToken(token: string): UserPayload;
 }
 export declare const authService: AuthService;
 //# sourceMappingURL=service.d.ts.map

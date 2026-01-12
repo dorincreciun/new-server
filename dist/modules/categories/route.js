@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CategoriesController = void 0;
 const express_1 = require("express");
 const client_1 = __importDefault(require("../../shared/prisma/client"));
-const response_1 = require("../../shared/api/http/response");
+const response_1 = require("../../shared/http/response");
 const errors_1 = require("../../shared/http/errors");
 const auth_1 = require("../../middlewares/auth");
 class CategoriesController {

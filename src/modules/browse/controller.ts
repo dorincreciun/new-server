@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { browseService } from './service';
-import { sendSuccess } from '../../shared/api/http/response';
+import { sendSuccess } from '../../shared/http/response';
 import { components } from '../../docs/schema';
 
 type ProductResponse = components["schemas"]["ProductDetails"];

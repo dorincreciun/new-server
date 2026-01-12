@@ -159,6 +159,19 @@ export class AuthService {
 
     return { accessToken, refreshToken };
   }
+
+  verifyAccessToken(token: string): UserPayload {
+    try {
+      const payload = jwt.verify(token, config.jwtAccessSecret) as any;
+      return {
+        id: payload.sub,
+        email: payload.email,
+        name: payload.name || '',
+      };
+    } catch (error) {
+      throw new UnauthorizedError('Token invalid sau expirat');
+    }
+  }
 }
 
 export const authService = new AuthService();

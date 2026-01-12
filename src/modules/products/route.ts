@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction, Router } from 'express';
 import prisma from '../../shared/prisma/client';
-import { sendSuccess } from '../../shared/api/http/response';
+import { sendSuccess } from '../../shared/http/response';
 import { NotFoundError } from '../../shared/http/errors';
 import { authMiddleware } from '../../middlewares/auth';
 import { formatProduct } from '../../shared/utils/formatters';
