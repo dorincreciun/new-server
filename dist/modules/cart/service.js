@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.cartService = exports.CartService = void 0;
 const client_1 = __importDefault(require("../../shared/prisma/client"));
 const errors_1 = require("../../shared/http/errors");
+const formatters_1 = require("../../shared/utils/formatters");
 class CartService {
     async getOrCreateCart(userId) {
         let cart = await client_1.default.cart.findUnique({ where: { userId } });
@@ -35,7 +36,7 @@ class CartService {
                 id: it.productVariant.product.id,
                 name: it.productVariant.product.name,
                 description: it.productVariant.product.description || '',
-                basePrice: Number(it.productVariant.product.basePrice),
+                basePrice: (0, formatters_1.formatDecimal)(it.productVariant.product.basePrice),
                 imageUrl: it.productVariant.product.imageUrl || '',
                 category: it.productVariant.product.category,
             },
@@ -43,12 +44,12 @@ class CartService {
                 id: it.productVariant.id,
                 doughType: it.productVariant.dough,
                 sizeOption: it.productVariant.size,
-                price: Number(it.productVariant.price),
+                price: (0, formatters_1.formatDecimal)(it.productVariant.price),
             },
             quantity: it.quantity,
-            lineTotal: Number(it.unitPrice) * it.quantity,
+            lineTotal: (0, formatters_1.formatDecimal)(it.unitPrice) * it.quantity,
         }));
-        const total = itemsFormatted.reduce((sum, it) => sum + it.lineTotal, 0);
+        const total = itemsFormatted.reduce((sum, it) => sum + (it.lineTotal || 0), 0);
         return {
             id: cart.id,
             items: itemsFormatted,

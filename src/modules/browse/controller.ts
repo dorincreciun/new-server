@@ -32,6 +32,20 @@ export class BrowseController {
       next(error);
     }
   }
+
+  async getSuggestions(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
+    try {
+      const { q, limit } = req.query as any;
+      const suggestions = await browseService.getSuggestions(q, Number(limit));
+      return sendSuccess(res, suggestions, 'Suggestions found');
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const browseController = new BrowseController();

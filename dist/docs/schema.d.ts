@@ -1024,8 +1024,8 @@ export interface components {
         SuccessResponse: {
             /** @example Operation successful */
             message: string;
-            data: Record<string, never>;
-            meta?: Record<string, never>;
+            data: Record<string, never> | null;
+            meta?: components["schemas"]["PaginationMeta"];
         };
         ErrorResponse: {
             /** @example Validation error */
@@ -1056,7 +1056,7 @@ export interface components {
             /** @example Classic Pizzas */
             name: string;
             /** @example Traditional pizzas with classic Italian recipes */
-            description?: string;
+            description?: string | null;
         };
         Ingredient: {
             /** @example 1 */
@@ -1096,7 +1096,7 @@ export interface components {
             /** @example Pizza Margherita */
             name: string;
             /** @example Classic Italian pizza */
-            description?: string;
+            description?: string | null;
             /**
              * Format: double
              * @example 25
@@ -1106,15 +1106,15 @@ export interface components {
              * Format: double
              * @example 20
              */
-            minPrice?: number;
+            minPrice?: number | null;
             /**
              * Format: double
              * @example 35
              */
-            maxPrice?: number;
-            imageUrl?: string;
+            maxPrice?: number | null;
+            imageUrl?: string | null;
             popularity?: number;
-            ratingAverage?: number;
+            ratingAverage?: number | null;
             ratingCount?: number;
             isCustomizable?: boolean;
             category?: components["schemas"]["Category"];

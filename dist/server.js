@@ -12,25 +12,50 @@ const config_1 = require("./config");
 const client_1 = __importDefault(require("./shared/prisma/client"));
 async function ensureSchemaCompatibility() {
     try {
-        const result = await client_1.default.$queryRawUnsafe('SELECT DATABASE() AS db');
-        const db = result[0]?.db;
-        if (!db)
-            return;
+        // Test connection to database
+        await client_1.default.$queryRaw `SELECT 1`;
+        console.log('✅ Database connection successful');
     }
     catch (err) {
-        console.error('Schema compatibility check failed:', err);
-    }
-    finally {
-        await client_1.default.$disconnect();
+        console.error('❌ Database connection failed:', err);
+        throw err;
     }
 }
 async function startServer() {
-    await ensureSchemaCompatibility();
-    const app = (0, app_1.createApp)();
-    const port = config_1.config.port || 3000;
-    app.listen(port, () => {
-        console.log(`🚀 Server running on http://localhost:${port}`);
-        console.log(`📄 Documentation available on http://localhost:${port}/api/docs`);
-    });
+    try {
+        await ensureSchemaCompatibility();
+        const app = (0, app_1.createApp)();
+        const port = config_1.config.port || 3000;
+        const server = app.listen(port, () => {
+            console.log(`🚀 Server running on http://localhost:${port}`);
+            console.log(`📄 Documentation available on http://localhost:${port}/api/docs`);
+        });
+        // Graceful shutdown
+        process.on('SIGTERM', async () => {
+            console.log('SIGTERM signal received: closing HTTP server');
+            server.close(() => {
+                console.log('HTTP server closed');
+                client_1.default.$disconnect().then(() => {
+                    console.log('Database connection closed');
+                    process.exit(0);
+                });
+            });
+        });
+        process.on('SIGINT', async () => {
+            console.log('SIGINT signal received: closing HTTP server');
+            server.close(() => {
+                console.log('HTTP server closed');
+                client_1.default.$disconnect().then(() => {
+                    console.log('Database connection closed');
+                    process.exit(0);
+                });
+            });
+        });
+    }
+    catch (err) {
+        console.error('Failed to start server:', err);
+        await client_1.default.$disconnect();
+        process.exit(1);
+    }
 }
 //# sourceMappingURL=server.js.map

@@ -112,40 +112,113 @@ export class BrowseService {
   }
 
   async getFilters(query: BrowseFiltersInput) {
-    const { categorySlug } = query;
-    const where: any = {};
+    const { categorySlug, q } = query;
+    const where: any = { AND: [] };
     if (categorySlug) {
-      where.category = { slug: categorySlug };
+      where.AND.push({ category: { slug: categorySlug } });
+    }
+    if (q) {
+      where.AND.push({
+        OR: [
+          { name: { contains: q } },
+          { description: { contains: q } },
+        ],
+      });
     }
 
-    // Agregări performante
-    const [priceRange, categoriesWithCounts] = await Promise.all([
-      prisma.product.aggregate({
-        where,
-        _min: { minPrice: true },
-        _max: { maxPrice: true },
-      }),
-      prisma.category.findMany({
-        include: {
-          _count: {
-            select: { products: { where } }
-          }
+    const finalWhere = where.AND.length > 0 ? where : {};
+
+    const products = await prisma.product.findMany({
+      where: finalWhere,
+      include: {
+        category: true,
+        flags: { include: { flag: true } },
+        ingredients: { include: { ingredient: true } },
+        variants: { include: { dough: true, size: true } }
+      }
+    });
+
+    const flagMap = new Map<string, { id: number; label: string | null; count: number }>();
+    const ingredientMap = new Map<string, { id: number; label: string | null; count: number }>();
+    const doughMap = new Map<string, { id: number; label: string | null; count: number }>();
+    const sizeMap = new Map<string, { id: number; label: string | null; count: number }>();
+    const categoryMap = new Map<number, { slug: string; name: string; count: number }>();
+
+    let minPrice = Number.POSITIVE_INFINITY;
+    let maxPrice = 0;
+
+    products.forEach(product => {
+      const mp = product.minPrice ? Number(product.minPrice) : Number(product.basePrice);
+      const xp = product.maxPrice ? Number(product.maxPrice) : Number(product.basePrice);
+      if (mp < minPrice) minPrice = mp;
+      if (xp > maxPrice) maxPrice = xp;
+
+      // Category count
+      const cat = product.category;
+      const currentCat = categoryMap.get(cat.id) || { slug: cat.slug, name: cat.name, count: 0 };
+      categoryMap.set(cat.id, { ...currentCat, count: currentCat.count + 1 });
+
+      product.flags.forEach(pf => {
+        const key = pf.flag.key;
+        const current = flagMap.get(key) || { id: pf.flag.id, label: pf.flag.label, count: 0 };
+        flagMap.set(key, { ...current, count: current.count + 1 });
+      });
+
+      product.ingredients.forEach(pi => {
+        const key = pi.ingredient.key;
+        const current = ingredientMap.get(key) || { id: pi.ingredient.id, label: pi.ingredient.label, count: 0 };
+        ingredientMap.set(key, { ...current, count: current.count + 1 });
+      });
+
+      product.variants.forEach(pv => {
+        if (pv.dough) {
+          const key = pv.dough.key;
+          const current = doughMap.get(key) || { id: pv.dough.id, label: pv.dough.label, count: 0 };
+          doughMap.set(key, { ...current, count: current.count + 1 });
         }
-      })
-    ]);
+        if (pv.size) {
+          const key = pv.size.key;
+          const current = sizeMap.get(key) || { id: pv.size.id, label: pv.size.label, count: 0 };
+          sizeMap.set(key, { ...current, count: current.count + 1 });
+        }
+      });
+    });
+
+    if (minPrice === Number.POSITIVE_INFINITY) {
+      minPrice = 0;
+      maxPrice = 0;
+    }
 
     return {
-      price: {
-        min: Number(priceRange._min.minPrice || 0),
-        max: Number(priceRange._max.maxPrice || 0),
-      },
-      categories: categoriesWithCounts.map(c => ({
-        id: c.id,
-        slug: c.slug,
-        name: c.name,
-        count: c._count.products,
-      })).filter(c => c.count > 0),
+      price: { min: Math.floor(minPrice), max: Math.ceil(maxPrice) },
+      categories: Array.from(categoryMap.entries()).map(([id, v]) => ({ id, slug: v.slug, name: v.name, count: v.count })),
+      flags: Array.from(flagMap.entries()).map(([key, v]) => ({ id: v.id, key, label: v.label, count: v.count })),
+      ingredients: Array.from(ingredientMap.entries()).map(([key, v]) => ({ id: v.id, key, label: v.label, count: v.count })),
+      doughTypes: Array.from(doughMap.entries()).map(([key, v]) => ({ id: v.id, key, label: v.label, count: v.count })),
+      sizeOptions: Array.from(sizeMap.entries()).map(([key, v]) => ({ id: v.id, key, label: v.label, count: v.count })),
     };
+  }
+
+  async getSuggestions(q: string, limit: number = 5) {
+    const products = await prisma.product.findMany({
+      where: {
+        OR: [
+          { name: { contains: q } },
+          { category: { name: { contains: q } } }
+        ]
+      },
+      take: limit,
+      include: {
+        category: true
+      }
+    });
+
+    return products.map(p => ({
+      id: p.id,
+      name: p.name,
+      categorySlug: p.category.slug,
+      imageUrl: p.imageUrl
+    }));
   }
 }
 

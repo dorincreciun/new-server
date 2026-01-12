@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.authController = exports.AuthController = void 0;
 const service_1 = require("./service");
-const response_1 = require("../../shared/http/response");
+const response_1 = require("../../shared/api/http/response");
 const cookieUtils_1 = require("../../utils/cookieUtils");
 const errors_1 = require("../../shared/http/errors");
 class AuthController {
@@ -41,10 +41,10 @@ class AuthController {
     }
     async me(req, res, next) {
         try {
-            // Utilizatorul ar trebui să fie deja atașat de middleware-ul de auth
-            if (!req.user)
+            const user = req.user;
+            if (!user)
                 throw new errors_1.UnauthorizedError();
-            return (0, response_1.sendSuccess)(res, req.user, 'Current user');
+            return (0, response_1.sendSuccess)(res, user, 'Current user');
         }
         catch (error) {
             next(error);

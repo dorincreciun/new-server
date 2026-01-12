@@ -6,21 +6,22 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProductsController = void 0;
 const express_1 = require("express");
 const client_1 = __importDefault(require("../../shared/prisma/client"));
-const response_1 = require("../../shared/http/response");
+const response_1 = require("../../shared/api/http/response");
 const errors_1 = require("../../shared/http/errors");
-const auth_1 = require("../../shared/middleware/auth");
+const auth_1 = require("../../middlewares/auth");
+const formatters_1 = require("../../shared/utils/formatters");
 class ProductsController {
     async list(req, res, next) {
         try {
             const products = await client_1.default.product.findMany({
-                include: { category: true }
+                include: {
+                    category: true,
+                    flags: { include: { flag: true } },
+                    ingredients: { include: { ingredient: true } },
+                    variants: { include: { dough: true, size: true } },
+                }
             });
-            const formatted = products.map(p => ({
-                ...p,
-                basePrice: Number(p.basePrice),
-                minPrice: p.minPrice ? Number(p.minPrice) : null,
-                maxPrice: p.maxPrice ? Number(p.maxPrice) : null,
-            }));
+            const formatted = products.map(formatters_1.formatProduct);
             return (0, response_1.sendSuccess)(res, formatted, 'Product list');
         }
         catch (error) {
@@ -41,21 +42,7 @@ class ProductsController {
             });
             if (!product)
                 throw new errors_1.NotFoundError('Product not found');
-            const formatted = {
-                ...product,
-                basePrice: Number(product.basePrice),
-                minPrice: product.minPrice ? Number(product.minPrice) : null,
-                maxPrice: product.maxPrice ? Number(product.maxPrice) : null,
-                ratingAverage: product.ratingAverage ? Number(product.ratingAverage) : null,
-                flags: product.flags.map(f => f.flag),
-                ingredients: product.ingredients.map(i => i.ingredient),
-                variants: product.variants.map(v => ({
-                    ...v,
-                    price: Number(v.price),
-                    doughType: v.dough,
-                    sizeOption: v.size,
-                })),
-            };
+            const formatted = (0, formatters_1.formatProduct)(product);
             return (0, response_1.sendSuccess)(res, formatted, 'Product details');
         }
         catch (error) {

@@ -10,10 +10,22 @@ const validate = (schema) => {
                 req.body = await schema.body.parseAsync(req.body);
             }
             if (schema.query) {
-                req.query = await schema.query.parseAsync(req.query);
+                const parsed = await schema.query.parseAsync(req.query);
+                Object.defineProperty(req, 'query', {
+                    value: parsed,
+                    writable: true,
+                    enumerable: true,
+                    configurable: true,
+                });
             }
             if (schema.params) {
-                req.params = await schema.params.parseAsync(req.params);
+                const parsed = await schema.params.parseAsync(req.params);
+                Object.defineProperty(req, 'params', {
+                    value: parsed,
+                    writable: true,
+                    enumerable: true,
+                    configurable: true,
+                });
             }
             next();
         }

@@ -15,26 +15,32 @@ components:
       in: cookie
       name: access_token
   schemas:
-    SuccessResponse:
-      type: object
-      required: [message, data]
-      properties:
-        message: { type: string, example: Operation successful }
-        data: { type: object, nullable: true }
-        meta: { $ref: '#/components/schemas/PaginationMeta', nullable: true }
-    ErrorResponse:
+    # --- Response Wrappers ---
+    ApiError:
       type: object
       required: [message, code]
       properties:
-        message: { type: string, example: Validation error }
-        code: { type: string, example: VALIDATION_ERROR }
+        message: { type: string, example: Validation failed }
+        code:
+          type: string
+          enum: [VALIDATION_ERROR, UNAUTHORIZED, FORBIDDEN, NOT_FOUND, CONFLICT, INTERNAL_ERROR]
+          example: VALIDATION_ERROR
         details:
           type: array
           items:
             type: object
             properties:
-              field: { type: string }
-              message: { type: string }
+              field: { type: string, example: email }
+              message: { type: string, example: Invalid email format }
+
+    SuccessNoData:
+      type: object
+      required: [message, data]
+      properties:
+        message: { type: string, example: Operation successful }
+        data: { type: object, nullable: true, example: null }
+
+    # --- Domain Models ---
     UserDTO:
       type: object
       required: [id, email]
@@ -42,6 +48,7 @@ components:
         id: { type: integer, example: 1 }
         email: { type: string, format: email, example: user@example.com }
         name: { type: string, example: John Doe }
+    
     Category:
       type: object
       required: [id, name, slug]
@@ -49,7 +56,9 @@ components:
         id: { type: integer, example: 1 }
         slug: { type: string, example: classic-pizzas }
         name: { type: string, example: Classic Pizzas }
-        description: { type: string, example: Traditional pizzas with classic Italian recipes, nullable: true }
+        description: { type: string, example: Traditional pizzas, nullable: true }
+        count: { type: integer, example: 15, description: Product count in this category }
+
     Ingredient:
       type: object
       required: [id, key, label]
@@ -57,6 +66,8 @@ components:
         id: { type: integer, example: 1 }
         key: { type: string, example: mozzarella }
         label: { type: string, example: Mozzarella }
+        count: { type: integer, example: 5, description: Optional count for filters }
+
     Flag:
       type: object
       required: [id, key, label]
@@ -64,6 +75,8 @@ components:
         id: { type: integer, example: 1 }
         key: { type: string, example: vegetarian }
         label: { type: string, example: Vegetarian }
+        count: { type: integer, example: 8 }
+
     DoughType:
       type: object
       required: [id, key, label]
@@ -71,6 +84,7 @@ components:
         id: { type: integer, example: 1 }
         key: { type: string, example: classic }
         label: { type: string, example: Classic Dough }
+
     SizeOption:
       type: object
       required: [id, key, label]
@@ -78,33 +92,38 @@ components:
         id: { type: integer, example: 1 }
         key: { type: string, example: medium }
         label: { type: string, example: Medium (30cm) }
-    Product:
+
+    ProductCard:
       type: object
-      required: [id, name, basePrice]
+      required: [id, name, imageUrl, minPrice]
       properties:
         id: { type: integer, example: 1 }
         name: { type: string, example: Pizza Margherita }
-        description: { type: string, example: Classic Italian pizza, nullable: true }
-        basePrice: { type: number, format: double, example: 25.00 }
-        minPrice: { type: number, format: double, example: 20.00, nullable: true }
-        maxPrice: { type: number, format: double, example: 35.00, nullable: true }
         imageUrl: { type: string, nullable: true }
-        popularity: { type: integer }
+        minPrice: { type: number, example: 25.50 }
+        maxPrice: { type: number, example: 45.00, nullable: true }
         ratingAverage: { type: number, nullable: true }
         ratingCount: { type: integer }
+        popularity: { type: integer }
         isCustomizable: { type: boolean }
-        category: { $ref: '#/components/schemas/Category' }
-    ProductWithRelations:
+        category:
+          type: object
+          properties:
+            name: { type: string }
+            slug: { type: string }
+
+    ProductDetails:
       allOf:
-        - $ref: '#/components/schemas/Product'
+        - $ref: '#/components/schemas/ProductCard'
         - type: object
           properties:
-            flags:
-              type: array
-              items: { $ref: '#/components/schemas/Flag' }
+            description: { type: string, nullable: true }
             ingredients:
               type: array
               items: { $ref: '#/components/schemas/Ingredient' }
+            flags:
+              type: array
+              items: { $ref: '#/components/schemas/Flag' }
             variants:
               type: array
               items:
@@ -116,6 +135,7 @@ components:
                   isDefault: { type: boolean }
                   doughType: { $ref: '#/components/schemas/DoughType', nullable: true }
                   sizeOption: { $ref: '#/components/schemas/SizeOption', nullable: true }
+
     PaginationMeta:
       type: object
       required: [page, limit, total, totalPages]
@@ -124,69 +144,266 @@ components:
         limit: { type: integer, example: 12 }
         total: { type: integer, example: 65 }
         totalPages: { type: integer, example: 6 }
+
+    Suggestion:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        categorySlug: { type: string, nullable: true }
+        imageUrl: { type: string, nullable: true }
+
     CartItem:
       type: object
-      required: [id, quantity, lineTotal]
+      required: [id, quantity, lineTotal, product]
       properties:
-        id: { type: integer, example: 501 }
-        product: { $ref: '#/components/schemas/Product' }
-        variant:
+        id: { type: integer }
+        quantity: { type: integer }
+        lineTotal: { type: number }
+        product:
           type: object
-          required: [id, price]
           properties:
             id: { type: integer }
+            name: { type: string }
+            imageUrl: { type: string, nullable: true }
+        variant:
+          type: object
+          properties:
+            id: { type: integer }
+            price: { type: number }
             doughType: { $ref: '#/components/schemas/DoughType' }
             sizeOption: { $ref: '#/components/schemas/SizeOption' }
-            price: { type: number }
-        quantity: { type: integer, example: 2 }
-        lineTotal: { type: number, example: 240 }
-    Cart:
+
+    CartDTO:
       type: object
       required: [id, items, total]
       properties:
-        id: { type: integer, example: 1 }
+        id: { type: integer }
         items:
           type: array
           items: { $ref: '#/components/schemas/CartItem' }
         subtotal: { type: number }
         discounts: { type: number }
         total: { type: number }
+
+    OrderDTO:
+      type: object
+      required: [id, status, total, createdAt, items]
+      properties:
+        id: { type: integer }
+        status: { type: string, enum: [PENDING, PAID, DELIVERING, COMPLETED, CANCELLED] }
+        total: { type: number }
+        subtotal: { type: number }
+        discounts: { type: number }
+        createdAt: { type: string, format: date-time }
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: integer }
+              productName: { type: string }
+              variantName: { type: string, nullable: true }
+              quantity: { type: integer }
+              unitPrice: { type: number }
+              imageUrl: { type: string, nullable: true }
+        customer:
+          type: object
+          properties:
+            name: { type: string }
+            email: { type: string, nullable: true }
+            phone: { type: string }
+        address:
+          type: object
+          properties:
+            city: { type: string }
+            street: { type: string }
+            house: { type: string }
+            apartment: { type: string, nullable: true }
+            comment: { type: string, nullable: true }
+
+    # --- Wrapper Responses ---
+    SuccessResponseUser:
+      allOf:
+        - $ref: '#/components/schemas/SuccessNoData'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/UserDTO' }
+    
+    SuccessResponseCategoryList:
+      allOf:
+        - $ref: '#/components/schemas/SuccessNoData'
+        - type: object
+          properties:
+            data:
+              type: array
+              items: { $ref: '#/components/schemas/Category' }
+
+    SuccessResponseCategory:
+      allOf:
+        - $ref: '#/components/schemas/SuccessNoData'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/Category' }
+
+    SuccessResponseProductList:
+      allOf:
+        - $ref: '#/components/schemas/SuccessNoData'
+        - type: object
+          properties:
+            data:
+              type: array
+              items: { $ref: '#/components/schemas/ProductCard' }
+            meta: { $ref: '#/components/schemas/PaginationMeta' }
+
+    SuccessResponseProductDetails:
+      allOf:
+        - $ref: '#/components/schemas/SuccessNoData'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/ProductDetails' }
+
+    SuccessResponseProduct:
+      allOf:
+        - $ref: '#/components/schemas/SuccessNoData'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/ProductCard' }
+
+    SuccessResponseCart:
+      allOf:
+        - $ref: '#/components/schemas/SuccessNoData'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/CartDTO' }
+
+    SuccessResponseOrder:
+      allOf:
+        - $ref: '#/components/schemas/SuccessNoData'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/OrderDTO' }
+
+    SuccessResponseOrderList:
+      allOf:
+        - $ref: '#/components/schemas/SuccessNoData'
+        - type: object
+          properties:
+            data:
+              type: array
+              items: { $ref: '#/components/schemas/OrderDTO' }
+            meta: { $ref: '#/components/schemas/PaginationMeta' }
+
+    SuccessResponseIngredientList:
+      allOf:
+        - $ref: '#/components/schemas/SuccessNoData'
+        - type: object
+          properties:
+            data:
+              type: array
+              items: { $ref: '#/components/schemas/Ingredient' }
+
+    SuccessResponseFlagList:
+      allOf:
+        - $ref: '#/components/schemas/SuccessNoData'
+        - type: object
+          properties:
+            data:
+              type: array
+              items: { $ref: '#/components/schemas/Flag' }
+
+    SuccessResponseDoughTypeList:
+      allOf:
+        - $ref: '#/components/schemas/SuccessNoData'
+        - type: object
+          properties:
+            data:
+              type: array
+              items: { $ref: '#/components/schemas/DoughType' }
+
+    SuccessResponseSizeOptionList:
+      allOf:
+        - $ref: '#/components/schemas/SuccessNoData'
+        - type: object
+          properties:
+            data:
+              type: array
+              items: { $ref: '#/components/schemas/SizeOption' }
+
+    SuccessResponseFilters:
+      allOf:
+        - $ref: '#/components/schemas/SuccessNoData'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                price:
+                  type: object
+                  properties:
+                    min: { type: number }
+                    max: { type: number }
+                categories:
+                  type: array
+                  items: { $ref: '#/components/schemas/Category' }
+                ingredients:
+                  type: array
+                  items: { $ref: '#/components/schemas/Ingredient' }
+                flags:
+                  type: array
+                  items: { $ref: '#/components/schemas/Flag' }
+                doughTypes:
+                  type: array
+                  items: { $ref: '#/components/schemas/DoughType' }
+                sizeOptions:
+                  type: array
+                  items: { $ref: '#/components/schemas/SizeOption' }
+
+    SuccessResponseSuggestions:
+      allOf:
+        - $ref: '#/components/schemas/SuccessNoData'
+        - type: object
+          properties:
+            data:
+              type: array
+              items: { $ref: '#/components/schemas/Suggestion' }
   responses:
     BadRequest:
       description: Bad request
       content:
         application/json:
-          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          schema: { $ref: '#/components/schemas/ApiError' }
     Unauthorized:
       description: Unauthorized
       content:
         application/json:
-          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          schema: { $ref: '#/components/schemas/ApiError' }
     Forbidden:
       description: Forbidden
       content:
         application/json:
-          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          schema: { $ref: '#/components/schemas/ApiError' }
     NotFound:
       description: Resource not found
       content:
         application/json:
-          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          schema: { $ref: '#/components/schemas/ApiError' }
     Conflict:
       description: Conflict
       content:
         application/json:
-          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          schema: { $ref: '#/components/schemas/ApiError' }
     ValidationError:
       description: Validation error
       content:
         application/json:
-          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          schema: { $ref: '#/components/schemas/ApiError' }
     InternalError:
       description: Internal server error
       content:
         application/json:
-          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          schema: { $ref: '#/components/schemas/ApiError' }
 paths:
   /auth/register:
     post:
@@ -208,12 +425,7 @@ paths:
           description: Created
           content:
             application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data: { $ref: '#/components/schemas/UserDTO' }
+              schema: { $ref: '#/components/schemas/SuccessResponseUser' }
         '400': { $ref: '#/components/responses/BadRequest' }
         '409': { $ref: '#/components/responses/Conflict' }
         '422': { $ref: '#/components/responses/ValidationError' }
@@ -237,12 +449,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data: { $ref: '#/components/schemas/UserDTO' }
+              schema: { $ref: '#/components/schemas/SuccessResponseUser' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '500': { $ref: '#/components/responses/InternalError' }
   /auth/refresh:
@@ -254,12 +461,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data: { $ref: '#/components/schemas/UserDTO' }
+              schema: { $ref: '#/components/schemas/SuccessResponseUser' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '500': { $ref: '#/components/responses/InternalError' }
   /auth/me:
@@ -272,12 +474,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data: { $ref: '#/components/schemas/UserDTO' }
+              schema: { $ref: '#/components/schemas/SuccessResponseUser' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '500': { $ref: '#/components/responses/InternalError' }
   /auth/logout:
@@ -289,7 +486,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/SuccessResponse' }
+              schema: { $ref: '#/components/schemas/SuccessNoData' }
         '500': { $ref: '#/components/responses/InternalError' }
   /categories:
     get:
@@ -300,14 +497,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items: { $ref: '#/components/schemas/Category' }
+              schema: { $ref: '#/components/schemas/SuccessResponseCategoryList' }
         '500': { $ref: '#/components/responses/InternalError' }
     post:
       tags: [Categories]
@@ -328,12 +518,7 @@ paths:
           description: Created
           content:
             application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data: { $ref: '#/components/schemas/Category' }
+              schema: { $ref: '#/components/schemas/SuccessResponseCategory' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '409': { $ref: '#/components/responses/Conflict' }
@@ -353,12 +538,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data: { $ref: '#/components/schemas/Category' }
+              schema: { $ref: '#/components/schemas/SuccessResponseCategory' }
         '404': { $ref: '#/components/responses/NotFound' }
         '500': { $ref: '#/components/responses/InternalError' }
     patch:
@@ -382,12 +562,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data: { $ref: '#/components/schemas/Category' }
+              schema: { $ref: '#/components/schemas/SuccessResponseCategory' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
@@ -406,7 +581,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/SuccessResponse' }
+              schema: { $ref: '#/components/schemas/SuccessNoData' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
@@ -420,14 +595,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items: { $ref: '#/components/schemas/Product' }
+              schema: { $ref: '#/components/schemas/SuccessResponseProductList' }
         '500': { $ref: '#/components/responses/InternalError' }
     post:
       tags: [Products]
@@ -449,12 +617,7 @@ paths:
           description: Created
           content:
             application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data: { $ref: '#/components/schemas/Product' }
+              schema: { $ref: '#/components/schemas/SuccessResponseProduct' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '422': { $ref: '#/components/responses/ValidationError' }
@@ -473,12 +636,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data: { $ref: '#/components/schemas/ProductWithRelations' }
+              schema: { $ref: '#/components/schemas/SuccessResponseProductDetails' }
         '404': { $ref: '#/components/responses/NotFound' }
         '500': { $ref: '#/components/responses/InternalError' }
     patch:
@@ -498,12 +656,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data: { $ref: '#/components/schemas/Product' }
+              schema: { $ref: '#/components/schemas/SuccessResponseProduct' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
@@ -522,7 +675,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/SuccessResponse' }
+              schema: { $ref: '#/components/schemas/SuccessNoData' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
@@ -550,20 +703,38 @@ paths:
         - name: order
           in: query
           schema: { type: string, enum: [asc, desc] }
+        - name: priceMin
+          in: query
+          schema: { type: number }
+        - name: priceMax
+          in: query
+          schema: { type: number }
+        - name: flags
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: array
+            items: { type: string }
+        - name: ingredients
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: array
+            items: { type: string }
+        - name: dough
+          in: query
+          schema: { type: string }
+        - name: size
+          in: query
+          schema: { type: string }
       responses:
         '200':
           description: OK
           content:
             application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items: { $ref: '#/components/schemas/ProductWithRelations' }
-                      meta: { $ref: '#/components/schemas/PaginationMeta' }
+              schema: { $ref: '#/components/schemas/SuccessResponseProductList' }
         '500': { $ref: '#/components/responses/InternalError' }
   /browse/filters:
     get:
@@ -578,29 +749,26 @@ paths:
           description: OK
           content:
             application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          price:
-                            type: object
-                            properties:
-                              min: { type: number }
-                              max: { type: number }
-                          categories:
-                            type: array
-                            items:
-                              type: object
-                              required: [id, slug, name, count]
-                              properties:
-                                id: { type: integer }
-                                slug: { type: string }
-                                name: { type: string }
-                                count: { type: integer }
+              schema: { $ref: '#/components/schemas/SuccessResponseFilters' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /browse/suggest:
+    get:
+      tags: [Browse]
+      summary: Search suggestions (autocomplete)
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 5 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponseSuggestions' }
         '500': { $ref: '#/components/responses/InternalError' }
   /cart:
     get:
@@ -612,12 +780,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data: { $ref: '#/components/schemas/Cart' }
+              schema: { $ref: '#/components/schemas/SuccessResponseCart' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '500': { $ref: '#/components/responses/InternalError' }
     delete:
@@ -629,7 +792,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/SuccessResponse' }
+              schema: { $ref: '#/components/schemas/SuccessNoData' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '500': { $ref: '#/components/responses/InternalError' }
   /cart/items:
@@ -652,12 +815,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data: { $ref: '#/components/schemas/Cart' }
+              schema: { $ref: '#/components/schemas/SuccessResponseCart' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationError' }
@@ -686,12 +844,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data: { $ref: '#/components/schemas/Cart' }
+              schema: { $ref: '#/components/schemas/SuccessResponseCart' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationError' }
@@ -710,12 +863,85 @@ paths:
           description: OK
           content:
             application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data: { $ref: '#/components/schemas/Cart' }
+              schema: { $ref: '#/components/schemas/SuccessResponseCart' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /checkout:
+    post:
+      tags: [Orders]
+      summary: Create order from cart
+      security: [{ cookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [customer, address]
+              properties:
+                customer:
+                  type: object
+                  required: [name, phone]
+                  properties:
+                    name: { type: string }
+                    email: { type: string, format: email }
+                    phone: { type: string }
+                address:
+                  type: object
+                  required: [city, street, house]
+                  properties:
+                    city: { type: string }
+                    street: { type: string }
+                    house: { type: string }
+                    apartment: { type: string }
+                    comment: { type: string }
+                paymentMethod: { type: string, enum: [CASH, CARD_ON_DELIVERY, ONLINE] }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponseOrder' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /orders:
+    get:
+      tags: [Orders]
+      summary: List user orders
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 10 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponseOrderList' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /orders/{id}:
+    get:
+      tags: [Orders]
+      summary: Order details
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponseOrder' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
         '500': { $ref: '#/components/responses/InternalError' }
@@ -728,14 +954,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items: { $ref: '#/components/schemas/Ingredient' }
+              schema: { $ref: '#/components/schemas/SuccessResponseIngredientList' }
         '500': { $ref: '#/components/responses/InternalError' }
   /taxonomies/flags:
     get:
@@ -746,14 +965,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items: { $ref: '#/components/schemas/Flag' }
+              schema: { $ref: '#/components/schemas/SuccessResponseFlagList' }
         '500': { $ref: '#/components/responses/InternalError' }
   /taxonomies/dough-types:
     get:
@@ -764,14 +976,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items: { $ref: '#/components/schemas/DoughType' }
+              schema: { $ref: '#/components/schemas/SuccessResponseDoughTypeList' }
         '500': { $ref: '#/components/responses/InternalError' }
   /taxonomies/size-options:
     get:
@@ -782,12 +987,5 @@ paths:
           description: OK
           content:
             application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items: { $ref: '#/components/schemas/SizeOption' }
+              schema: { $ref: '#/components/schemas/SuccessResponseSizeOptionList' }
         '500': { $ref: '#/components/responses/InternalError' }

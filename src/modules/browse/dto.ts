@@ -44,5 +44,11 @@ export const browseFiltersSchema = z.object({
   q: z.string().optional(),
 });
 
+export const searchSuggestSchema = z.object({
+  q: z.string().min(1),
+  limit: z.coerce.number().int().positive().default(5),
+});
+
 export type BrowseProductsInput = z.infer<typeof browseProductsSchema>;
 export type BrowseFiltersInput = z.infer<typeof browseFiltersSchema>;
+export type SearchSuggestInput = z.infer<typeof searchSuggestSchema>;

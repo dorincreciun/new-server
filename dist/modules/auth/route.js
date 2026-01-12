@@ -4,7 +4,7 @@ const express_1 = require("express");
 const controller_1 = require("./controller");
 const validate_1 = require("../../shared/middleware/validate");
 const dto_1 = require("./dto");
-const auth_1 = require("../../shared/middleware/auth");
+const auth_1 = require("../../middlewares/auth");
 const router = (0, express_1.Router)();
 router.post('/register', (0, validate_1.validate)({ body: dto_1.registerSchema }), controller_1.authController.register);
 router.post('/login', (0, validate_1.validate)({ body: dto_1.loginSchema }), controller_1.authController.login);
