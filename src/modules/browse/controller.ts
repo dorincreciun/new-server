@@ -1,51 +1,40 @@
-import { Request, Response, NextFunction } from 'express';
-import { browseService } from './service';
-import { sendSuccess } from '../../shared/http/response';
-import { components } from '../../docs/schema';
+import {Request, Response, NextFunction} from 'express';
+import {browseService} from './service';
+import {sendSuccess} from '../../shared/http/response';
+import {components} from '../../docs/schema';
 
 type ProductResponse = components["schemas"]["ProductDetails"];
 type PaginationMeta = components["schemas"]["PaginationMeta"];
 
 export class BrowseController {
-  async getProducts(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) {
-    try {
-      const { products, pagination } = await browseService.getProducts(req.query as any);
-      return sendSuccess<ProductResponse[], PaginationMeta>(res, products, 'Products found', 200, pagination);
-    } catch (error) {
-      next(error);
+    async getProducts(
+        req: Request,
+        res: Response,
+        next: NextFunction
+    ) {
+        try {
+            const {products, pagination, filters} = await browseService.getProducts(req.query as any);
+            return sendSuccess<ProductResponse[], any>(
+                res,
+                products,
+                'Products found',
+                200,
+                { pagination, filters }
+            );
+        } catch (error) {
+            next(error);
+        }
     }
-  }
 
-  async getFilters(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) {
-    try {
-      const filters = await browseService.getFilters(req.query as any);
-      return sendSuccess(res, filters, 'Available filters');
-    } catch (error) {
-      next(error);
+    async getFilters(
+        req: Request,
+        res: Response,
+        next: NextFunction
+    ) {
+        // Endpoint /browse/filters a fost eliminat din API public.
+        // Metoda este păstrată doar ca fallback pentru compatibilitate internă (dacă va fi nevoie).
+        return next();
     }
-  }
-
-  async getSuggestions(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) {
-    try {
-      const { q, limit } = req.query as any;
-      const suggestions = await browseService.getSuggestions(q, Number(limit));
-      return sendSuccess(res, suggestions, 'Suggestions found');
-    } catch (error) {
-      next(error);
-    }
-  }
 }
 
 export const browseController = new BrowseController();

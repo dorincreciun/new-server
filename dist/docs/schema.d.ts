@@ -560,18 +560,30 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
+                    /** @description Full-text search in product name and description */
                     q?: string;
+                    /** @description Category slug (e.g. classic-pizzas) */
                     categorySlug?: string;
                     page?: number;
                     limit?: number;
                     sort?: "price" | "rating" | "popularity" | "newest";
                     order?: "asc" | "desc";
+                    /** @description Minimum product price (applied on minPrice) */
                     priceMin?: number;
+                    /** @description Maximum product price (applied on minPrice) */
                     priceMax?: number;
+                    /** @description Product flags (e.g. vegetarian, spicy). Can be sent either as repeated parameters (?flags=vegetarian&flags=spicy) or as a single comma-separated value (?flags=vegetarian,spicy). */
                     flags?: string[];
+                    /** @description Ingredient keys to filter by (intersection). Can be sent either as repeated parameters (?ingredients=mozzarella&ingredients=salam) sau ca un singur string cu valori separate prin virgulă (?ingredients=mozzarella,salam). */
                     ingredients?: string[];
+                    /** @description Dough type key (variant-level filter) */
                     dough?: string;
+                    /** @description Size key (variant-level filter) */
                     size?: string;
+                    /** @description Filter by customizable products only (true) */
+                    isCustomizable?: boolean;
+                    /** @description When true, restricts to products released in the last 30 days. */
+                    isNew?: boolean;
                 };
                 header?: never;
                 path?: never;
@@ -586,85 +598,6 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["SuccessResponseProductList"];
-                    };
-                };
-                500: components["responses"]["InternalError"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/browse/filters": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get filter options */
-        get: {
-            parameters: {
-                query?: {
-                    categorySlug?: string;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SuccessResponseFilters"];
-                    };
-                };
-                500: components["responses"]["InternalError"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/browse/suggest": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Search suggestions (autocomplete) */
-        get: {
-            parameters: {
-                query: {
-                    q: string;
-                    limit?: number;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SuccessResponseSuggestions"];
                     };
                 };
                 500: components["responses"]["InternalError"];
@@ -1229,6 +1162,11 @@ export interface components {
             key: string;
             /** @example Classic Dough */
             label: string;
+            /**
+             * @description Number of product variants matching this dough type in the current filter context
+             * @example 12
+             */
+            count?: number;
         };
         SizeOption: {
             /** @example 1 */
@@ -1237,6 +1175,11 @@ export interface components {
             key: string;
             /** @example Medium (30cm) */
             label: string;
+            /**
+             * @description Number of product variants matching this size in the current filter context
+             * @example 18
+             */
+            count?: number;
         };
         ProductCard: {
             /** @example 1 */
@@ -1284,12 +1227,6 @@ export interface components {
             total: number;
             /** @example 6 */
             totalPages: number;
-        };
-        Suggestion: {
-            id: number;
-            name: string;
-            categorySlug?: string | null;
-            imageUrl?: string | null;
         };
         CartItem: {
             id: number;
@@ -1353,9 +1290,22 @@ export interface components {
         SuccessResponseCategory: components["schemas"]["SuccessNoData"] & {
             data?: components["schemas"]["Category"];
         };
+        Filters: {
+            price?: {
+                min?: number;
+                max?: number;
+            };
+            ingredients?: components["schemas"]["Ingredient"][];
+            flags?: components["schemas"]["Flag"][];
+            doughTypes?: components["schemas"]["DoughType"][];
+            sizeOptions?: components["schemas"]["SizeOption"][];
+        };
         SuccessResponseProductList: components["schemas"]["SuccessNoData"] & {
             data?: components["schemas"]["ProductCard"][];
-            meta?: components["schemas"]["PaginationMeta"];
+            meta?: {
+                pagination?: components["schemas"]["PaginationMeta"];
+                filters?: components["schemas"]["Filters"];
+            };
         };
         SuccessResponseProductDetails: components["schemas"]["SuccessNoData"] & {
             data?: components["schemas"]["ProductDetails"];
@@ -1384,22 +1334,6 @@ export interface components {
         };
         SuccessResponseSizeOptionList: components["schemas"]["SuccessNoData"] & {
             data?: components["schemas"]["SizeOption"][];
-        };
-        SuccessResponseFilters: components["schemas"]["SuccessNoData"] & {
-            data?: {
-                price?: {
-                    min?: number;
-                    max?: number;
-                };
-                categories?: components["schemas"]["Category"][];
-                ingredients?: components["schemas"]["Ingredient"][];
-                flags?: components["schemas"]["Flag"][];
-                doughTypes?: components["schemas"]["DoughType"][];
-                sizeOptions?: components["schemas"]["SizeOption"][];
-            };
-        };
-        SuccessResponseSuggestions: components["schemas"]["SuccessNoData"] & {
-            data?: components["schemas"]["Suggestion"][];
         };
     };
     responses: {

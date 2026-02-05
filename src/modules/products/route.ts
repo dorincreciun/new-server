@@ -19,7 +19,8 @@ export class ProductsController {
           variants: { include: { dough: true, size: true } },
         }
       });
-      const formatted = products.map(formatProduct);
+      // Aici păstrăm variants pentru că e listare generală (probabil admin sau dashboard)
+      const formatted = products.map(p => formatProduct(p, true));
       return sendSuccess<ProductResponse[]>(res, formatted, 'Product list');
     } catch (error) {
       next(error);
@@ -40,7 +41,8 @@ export class ProductsController {
       });
       if (!product) throw new NotFoundError('Product not found');
       
-      const formatted = formatProduct(product);
+      // Detaliile produsului trebuie să conțină variantele
+      const formatted = formatProduct(product, true);
       
       return sendSuccess<ProductResponse>(res, formatted, 'Product details');
     } catch (error) {

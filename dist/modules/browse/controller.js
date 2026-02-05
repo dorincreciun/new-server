@@ -6,31 +6,17 @@ const response_1 = require("../../shared/http/response");
 class BrowseController {
     async getProducts(req, res, next) {
         try {
-            const { products, pagination } = await service_1.browseService.getProducts(req.query);
-            return (0, response_1.sendSuccess)(res, products, 'Products found', 200, pagination);
+            const { products, pagination, filters } = await service_1.browseService.getProducts(req.query);
+            return (0, response_1.sendSuccess)(res, products, 'Products found', 200, { pagination, filters });
         }
         catch (error) {
             next(error);
         }
     }
     async getFilters(req, res, next) {
-        try {
-            const filters = await service_1.browseService.getFilters(req.query);
-            return (0, response_1.sendSuccess)(res, filters, 'Available filters');
-        }
-        catch (error) {
-            next(error);
-        }
-    }
-    async getSuggestions(req, res, next) {
-        try {
-            const { q, limit } = req.query;
-            const suggestions = await service_1.browseService.getSuggestions(q, Number(limit));
-            return (0, response_1.sendSuccess)(res, suggestions, 'Suggestions found');
-        }
-        catch (error) {
-            next(error);
-        }
+        // Endpoint /browse/filters a fost eliminat din API public.
+        // Metoda este păstrată doar ca fallback pentru compatibilitate internă (dacă va fi nevoie).
+        return next();
     }
 }
 exports.BrowseController = BrowseController;

@@ -1,4 +1,4 @@
-﻿openapi: 3.0.3
+openapi: 3.0.3
 info:
   title: Pizza Shop API
   version: 2.0.0
@@ -84,6 +84,10 @@ components:
         id: { type: integer, example: 1 }
         key: { type: string, example: classic }
         label: { type: string, example: Classic Dough }
+        count:
+          type: integer
+          description: Number of product variants matching this dough type in the current filter context
+          example: 12
 
     SizeOption:
       type: object
@@ -92,6 +96,10 @@ components:
         id: { type: integer, example: 1 }
         key: { type: string, example: medium }
         label: { type: string, example: Medium (30cm) }
+        count:
+          type: integer
+          description: Number of product variants matching this size in the current filter context
+          example: 18
 
     ProductCard:
       type: object
@@ -152,15 +160,6 @@ components:
         limit: { type: integer, example: 12 }
         total: { type: integer, example: 65 }
         totalPages: { type: integer, example: 6 }
-
-    Suggestion:
-      type: object
-      required: [id, name]
-      properties:
-        id: { type: integer }
-        name: { type: string }
-        categorySlug: { type: string, nullable: true }
-        imageUrl: { type: string, nullable: true }
 
     CartItem:
       type: object
@@ -255,6 +254,27 @@ components:
           properties:
             data: { $ref: '#/components/schemas/Category' }
 
+    Filters:
+      type: object
+      properties:
+        price:
+          type: object
+          properties:
+            min: { type: number }
+            max: { type: number }
+        ingredients:
+          type: array
+          items: { $ref: '#/components/schemas/Ingredient' }
+        flags:
+          type: array
+          items: { $ref: '#/components/schemas/Flag' }
+        doughTypes:
+          type: array
+          items: { $ref: '#/components/schemas/DoughType' }
+        sizeOptions:
+          type: array
+          items: { $ref: '#/components/schemas/SizeOption' }
+
     SuccessResponseProductList:
       allOf:
         - $ref: '#/components/schemas/SuccessNoData'
@@ -263,7 +283,11 @@ components:
             data:
               type: array
               items: { $ref: '#/components/schemas/ProductCard' }
-            meta: { $ref: '#/components/schemas/PaginationMeta' }
+            meta:
+              type: object
+              properties:
+                pagination: { $ref: '#/components/schemas/PaginationMeta' }
+                filters: { $ref: '#/components/schemas/Filters' }
 
     SuccessResponseProductDetails:
       allOf:
@@ -339,43 +363,7 @@ components:
               type: array
               items: { $ref: '#/components/schemas/SizeOption' }
 
-    SuccessResponseFilters:
-      allOf:
-        - $ref: '#/components/schemas/SuccessNoData'
-        - type: object
-          properties:
-            data:
-              type: object
-              properties:
-                price:
-                  type: object
-                  properties:
-                    min: { type: number }
-                    max: { type: number }
-                categories:
-                  type: array
-                  items: { $ref: '#/components/schemas/Category' }
-                ingredients:
-                  type: array
-                  items: { $ref: '#/components/schemas/Ingredient' }
-                flags:
-                  type: array
-                  items: { $ref: '#/components/schemas/Flag' }
-                doughTypes:
-                  type: array
-                  items: { $ref: '#/components/schemas/DoughType' }
-                sizeOptions:
-                  type: array
-                  items: { $ref: '#/components/schemas/SizeOption' }
 
-    SuccessResponseSuggestions:
-      allOf:
-        - $ref: '#/components/schemas/SuccessNoData'
-        - type: object
-          properties:
-            data:
-              type: array
-              items: { $ref: '#/components/schemas/Suggestion' }
   responses:
     BadRequest:
       description: Bad request
@@ -696,9 +684,11 @@ paths:
         - name: q
           in: query
           schema: { type: string }
+          description: Full-text search in product name and description
         - name: categorySlug
           in: query
           schema: { type: string }
+          description: Category slug (e.g. classic-pizzas)
         - name: page
           in: query
           schema: { type: integer, default: 1 }
@@ -714,9 +704,11 @@ paths:
         - name: priceMin
           in: query
           schema: { type: number }
+          description: Minimum product price (applied on minPrice)
         - name: priceMax
           in: query
           schema: { type: number }
+          description: Maximum product price (applied on minPrice)
         - name: flags
           in: query
           style: form
@@ -724,6 +716,9 @@ paths:
           schema:
             type: array
             items: { type: string }
+          description: >
+            Product flags (e.g. vegetarian, spicy). Can be sent either as repeated parameters (?flags=vegetarian&flags=spicy)
+            or as a single comma-separated value (?flags=vegetarian,spicy).
         - name: ingredients
           in: query
           style: form
@@ -731,52 +726,33 @@ paths:
           schema:
             type: array
             items: { type: string }
+          description: >
+            Ingredient keys to filter by (intersection). Can be sent either as repeated parameters
+            (?ingredients=mozzarella&ingredients=salam) sau ca un singur string cu valori separate prin virgulă
+            (?ingredients=mozzarella,salam).
         - name: dough
           in: query
           schema: { type: string }
+          description: Dough type key (variant-level filter)
         - name: size
           in: query
           schema: { type: string }
+          description: Size key (variant-level filter)
+        - name: isCustomizable
+          in: query
+          schema: { type: boolean }
+          description: Filter by customizable products only (true)
+        - name: isNew
+          in: query
+          schema: { type: boolean }
+          description: >
+            When true, restricts to products released in the last 30 days.
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema: { $ref: '#/components/schemas/SuccessResponseProductList' }
-        '500': { $ref: '#/components/responses/InternalError' }
-  /browse/filters:
-    get:
-      tags: [Browse]
-      summary: Get filter options
-      parameters:
-        - name: categorySlug
-          in: query
-          schema: { type: string }
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/SuccessResponseFilters' }
-        '500': { $ref: '#/components/responses/InternalError' }
-  /browse/suggest:
-    get:
-      tags: [Browse]
-      summary: Search suggestions (autocomplete)
-      parameters:
-        - name: q
-          in: query
-          required: true
-          schema: { type: string }
-        - name: limit
-          in: query
-          schema: { type: integer, default: 5 }
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/SuccessResponseSuggestions' }
         '500': { $ref: '#/components/responses/InternalError' }
   /cart:
     get:
