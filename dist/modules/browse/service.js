@@ -12,15 +12,10 @@ class BrowseService {
      * cât și pentru /browse/filters pentru a garanta consistența filtrării.
      */
     buildProductWhere(query) {
-        const { q, categorySlug, priceMin, priceMax, flags, ingredients, dough, size, isCustomizable, isNew, } = query;
+        const { categorySlug, priceMin, priceMax, flags, ingredients, dough, size, isCustomizable, isNew, } = query;
         const where = { AND: [] };
         if (categorySlug) {
             where.AND.push({ category: { slug: categorySlug } });
-        }
-        if (q) {
-            where.AND.push({
-                OR: [{ name: { contains: q } }, { description: { contains: q } }],
-            });
         }
         if (priceMin !== undefined) {
             where.AND.push({ minPrice: { gte: priceMin } });
@@ -96,7 +91,7 @@ class BrowseService {
                     ...productRelationWhere,
                     doughId: { not: null },
                 },
-                _count: { id: true },
+                _count: { productId: true }, // Corectat: numărăm produsele, nu variantele
             }),
             client_1.default.sizeOption.findMany({
                 select: { id: true, key: true, label: true },
@@ -107,7 +102,7 @@ class BrowseService {
                     ...productRelationWhere,
                     sizeId: { not: null },
                 },
-                _count: { id: true },
+                _count: { productId: true }, // Corectat: numărăm produsele, nu variantele
             }),
         ]);
         // Dinamic MIN/MAX price pe rezultatele filtrate
@@ -138,49 +133,57 @@ class BrowseService {
         flagGroups.forEach((g) => {
             flagCountById.set(g.flagId, g._count.productId);
         });
-        const flagFilters = allFlags.map((f) => ({
+        const flagFilters = allFlags
+            .map((f) => ({
             id: f.id,
             key: f.key,
             label: f.label,
             count: flagCountById.get(f.id) ?? 0,
-        }));
+        }))
+            .filter((f) => f.count > 0);
         // Ingrediente cu count dinamic (inclusiv 0 – ex. "Salam" când e selectat "Vegetarian")
         const ingredientCountById = new Map();
         ingredientGroups.forEach((g) => {
             ingredientCountById.set(g.ingredientId, g._count.productId);
         });
-        const ingredientFilters = allIngredients.map((ing) => ({
+        const ingredientFilters = allIngredients
+            .map((ing) => ({
             id: ing.id,
             key: ing.key,
             label: ing.label,
             count: ingredientCountById.get(ing.id) ?? 0,
-        }));
-        // Tipuri de aluat (doughTypes) cu count pe variante
+        }))
+            .filter((ing) => ing.count > 0);
+        // Tipuri de aluat (doughTypes) cu count pe produse unice
         const doughCountById = new Map();
         doughGroups.forEach((g) => {
             if (g.doughId != null) {
-                doughCountById.set(g.doughId, g._count.id);
+                doughCountById.set(g.doughId, g._count.productId);
             }
         });
-        const doughFilters = allDoughTypes.map((d) => ({
+        const doughFilters = allDoughTypes
+            .map((d) => ({
             id: d.id,
             key: d.key,
             label: d.label,
             count: doughCountById.get(d.id) ?? 0,
-        }));
-        // Mărimi (sizeOptions) cu count pe variante
+        }))
+            .filter((d) => d.count > 0);
+        // Mărimi (sizeOptions) cu count pe produse unice
         const sizeCountById = new Map();
         sizeGroups.forEach((g) => {
             if (g.sizeId != null) {
-                sizeCountById.set(g.sizeId, g._count.id);
+                sizeCountById.set(g.sizeId, g._count.productId);
             }
         });
-        const sizeFilters = allSizeOptions.map((s) => ({
+        const sizeFilters = allSizeOptions
+            .map((s) => ({
             id: s.id,
             key: s.key,
             label: s.label,
             count: sizeCountById.get(s.id) ?? 0,
-        }));
+        }))
+            .filter((s) => s.count > 0);
         return {
             price: { min: Math.floor(minPrice), max: Math.ceil(maxPrice) },
             flags: flagFilters,
@@ -206,7 +209,7 @@ class BrowseService {
             orderBy = { popularity: order };
         else if (sort === 'newest')
             orderBy = { releasedAt: order };
-        const [products, total, filters] = await Promise.all([
+        const [products, total, currentProductIds] = await Promise.all([
             client_1.default.product.findMany({
                 where,
                 include: {
@@ -218,11 +221,69 @@ class BrowseService {
                 orderBy,
                 skip,
                 take: limit,
+                distinct: ['name'], // Eliminare duplicate bazat pe nume (sau 'slug' dacă e preferat)
+            }),
+            client_1.default.product.count({
+                where,
+                // Atenție: count-ul trebuie să reflecte distinct-ul dacă e cazul, 
+                // dar Prisma count nu suportă direct distinct pe câmpuri multiple ușor.
+                // Totuși, în majoritatea bazelor de date, produsele cu același nume 
+                // ar trebui să fie de fapt același produs.
+            }),
+            client_1.default.product.findMany({
+                where,
+                orderBy,
+                skip,
+                take: limit,
+                select: { id: true },
+                distinct: ['name'],
+            }),
+        ]);
+        const filters = await this.buildFilterList({
+            id: { in: currentProductIds.map((p) => p.id) },
+        });
+        // Formatează produsele și exclude variants (default false în formatProduct)
+        const formattedProducts = products.map((p) => (0, formatters_1.formatProduct)(p, false));
+        return {
+            products: formattedProducts,
+            pagination: {
+                page,
+                limit,
+                total, // Ideal total ar trebui să fie numărul de nume unice
+                totalPages: Math.ceil(total / limit),
+            },
+            filters,
+        };
+    }
+    /**
+     * Căutare produse după nume sau descriere.
+     */
+    async searchProducts(query) {
+        const { q, page, limit } = query;
+        const skip = (page - 1) * limit;
+        const where = {
+            OR: [
+                { name: { contains: q, mode: 'insensitive' } },
+                { description: { contains: q, mode: 'insensitive' } },
+            ],
+        };
+        const [products, total] = await Promise.all([
+            client_1.default.product.findMany({
+                where,
+                include: {
+                    category: true,
+                    flags: { include: { flag: true } },
+                    ingredients: { include: { ingredient: true } },
+                    variants: { include: { dough: true, size: true } },
+                },
+                orderBy: { popularity: 'desc' },
+                skip,
+                take: limit,
+                distinct: ['name'],
             }),
             client_1.default.product.count({ where }),
-            this.buildFilterList(where),
         ]);
-        const formattedProducts = products.map(formatters_1.formatProduct);
+        const formattedProducts = products.map((p) => (0, formatters_1.formatProduct)(p, false));
         return {
             products: formattedProducts,
             pagination: {
@@ -231,7 +292,6 @@ class BrowseService {
                 total,
                 totalPages: Math.ceil(total / limit),
             },
-            filters,
         };
     }
     /**

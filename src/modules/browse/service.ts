@@ -1,5 +1,5 @@
 import prisma from '../../shared/prisma/client';
-import { BrowseProductsInput, BrowseFiltersInput } from './dto';
+import { BrowseProductsInput, BrowseFiltersInput, SearchProductsInput } from './dto';
 import { formatProduct } from '../../shared/utils/formatters';
 
 type BrowseFilterLike =
@@ -25,7 +25,6 @@ export class BrowseService {
    */
   private buildProductWhere(query: BrowseFilterLike) {
     const {
-      q,
       categorySlug,
       priceMin,
       priceMax,
@@ -41,12 +40,6 @@ export class BrowseService {
 
     if (categorySlug) {
       where.AND.push({ category: { slug: categorySlug } });
-    }
-
-    if (q) {
-      where.AND.push({
-        OR: [{ name: { contains: q } }, { description: { contains: q } }],
-      });
     }
 
     if (priceMin !== undefined) {
@@ -317,6 +310,50 @@ export class BrowseService {
         totalPages: Math.ceil(total / limit),
       },
       filters,
+    };
+  }
+
+  /**
+   * Căutare produse după nume sau descriere.
+   */
+  async searchProducts(query: SearchProductsInput) {
+    const { q, page, limit } = query;
+    const skip = (page - 1) * limit;
+
+    const where = {
+      OR: [
+        { name: { contains: q, mode: 'insensitive' as const } },
+        { description: { contains: q, mode: 'insensitive' as const } },
+      ],
+    };
+
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        include: {
+          category: true,
+          flags: { include: { flag: true } },
+          ingredients: { include: { ingredient: true } },
+          variants: { include: { dough: true, size: true } },
+        },
+        orderBy: { popularity: 'desc' },
+        skip,
+        take: limit,
+        distinct: ['name'],
+      }),
+      prisma.product.count({ where }),
+    ]);
+
+    const formattedProducts = products.map((p) => formatProduct(p, false));
+
+    return {
+      products: formattedProducts,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 

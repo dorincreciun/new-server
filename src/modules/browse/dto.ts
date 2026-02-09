@@ -1,14 +1,6 @@
 import { z } from 'zod';
 
 const browseBaseFiltersSchema = z.object({
-  q: z
-    .string()
-    .optional()
-    .transform((val) => {
-      if (val === undefined) return undefined;
-      const trimmed = val.trim();
-      return trimmed.length ? trimmed : undefined;
-    }),
   categorySlug: z.string().optional(),
   priceMin: z.coerce.number().min(0).optional(),
   priceMax: z.coerce.number().min(0).optional(),
@@ -63,5 +55,15 @@ export const browseFiltersSchema = browseBaseFiltersSchema.refine(priceRangeCons
   path: ['priceMin'],
 });
 
+export const searchProductsSchema = z.object({
+  q: z
+    .string()
+    .min(1, 'Căutarea trebuie să conțină cel puțin un caracter')
+    .transform((val) => val.trim()),
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(12),
+});
+
 export type BrowseProductsInput = z.infer<typeof browseProductsSchema>;
 export type BrowseFiltersInput = z.infer<typeof browseFiltersSchema>;
+export type SearchProductsInput = z.infer<typeof searchProductsSchema>;

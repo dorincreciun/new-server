@@ -1,6 +1,5 @@
 import { z } from 'zod';
 export declare const browseProductsSchema: z.ZodObject<{
-    q: z.ZodPipe<z.ZodOptional<z.ZodString>, z.ZodTransform<string | undefined, string | undefined>>;
     categorySlug: z.ZodOptional<z.ZodString>;
     priceMin: z.ZodOptional<z.ZodCoercedNumber<unknown>>;
     priceMax: z.ZodOptional<z.ZodCoercedNumber<unknown>>;
@@ -24,7 +23,6 @@ export declare const browseProductsSchema: z.ZodObject<{
     }>>;
 }, z.core.$strip>;
 export declare const browseFiltersSchema: z.ZodObject<{
-    q: z.ZodPipe<z.ZodOptional<z.ZodString>, z.ZodTransform<string | undefined, string | undefined>>;
     categorySlug: z.ZodOptional<z.ZodString>;
     priceMin: z.ZodOptional<z.ZodCoercedNumber<unknown>>;
     priceMax: z.ZodOptional<z.ZodCoercedNumber<unknown>>;
@@ -35,6 +33,12 @@ export declare const browseFiltersSchema: z.ZodObject<{
     isCustomizable: z.ZodOptional<z.ZodPipe<z.ZodTransform<boolean, unknown>, z.ZodBoolean>>;
     isNew: z.ZodOptional<z.ZodPipe<z.ZodTransform<boolean, unknown>, z.ZodBoolean>>;
 }, z.core.$strip>;
+export declare const searchProductsSchema: z.ZodObject<{
+    q: z.ZodPipe<z.ZodString, z.ZodTransform<string, string>>;
+    page: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
+    limit: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
+}, z.core.$strip>;
 export type BrowseProductsInput = z.infer<typeof browseProductsSchema>;
 export type BrowseFiltersInput = z.infer<typeof browseFiltersSchema>;
+export type SearchProductsInput = z.infer<typeof searchProductsSchema>;
 //# sourceMappingURL=dto.d.ts.map

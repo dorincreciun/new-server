@@ -26,7 +26,8 @@ type ProductWithRelations = Prisma.ProductGetPayload<{
 export declare function formatDecimal(value: Prisma.Decimal | number | string | null | undefined): number;
 /**
  * Formatează un produs din Prisma în formatul API
+ * Modificat pentru a exclude variants din listă și a adăuga prețul principal.
  */
-export declare function formatProduct(product: ProductWithRelations): any;
+export declare function formatProduct(product: ProductWithRelations, includeVariants?: boolean): any;
 export {};
 //# sourceMappingURL=formatters.d.ts.map

@@ -1,4 +1,4 @@
-import { BrowseProductsInput, BrowseFiltersInput } from './dto';
+import { BrowseProductsInput, BrowseFiltersInput, SearchProductsInput } from './dto';
 export declare class BrowseService {
     /**
      * Construiește obiectul `where` folosit atât pentru /browse/products,
@@ -51,6 +51,18 @@ export declare class BrowseService {
                 label: string | null;
                 count: number;
             }[];
+        };
+    }>;
+    /**
+     * Căutare produse după nume sau descriere.
+     */
+    searchProducts(query: SearchProductsInput): Promise<{
+        products: any[];
+        pagination: {
+            page: number;
+            limit: number;
+            total: number;
+            totalPages: number;
         };
     }>;
     /**

@@ -1,17 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.browseFiltersSchema = exports.browseProductsSchema = void 0;
+exports.searchProductsSchema = exports.browseFiltersSchema = exports.browseProductsSchema = void 0;
 const zod_1 = require("zod");
 const browseBaseFiltersSchema = zod_1.z.object({
-    q: zod_1.z
-        .string()
-        .optional()
-        .transform((val) => {
-        if (val === undefined)
-            return undefined;
-        const trimmed = val.trim();
-        return trimmed.length ? trimmed : undefined;
-    }),
     categorySlug: zod_1.z.string().optional(),
     priceMin: zod_1.z.coerce.number().min(0).optional(),
     priceMax: zod_1.z.coerce.number().min(0).optional(),
@@ -65,5 +56,13 @@ exports.browseProductsSchema = browseBaseFiltersSchema
 exports.browseFiltersSchema = browseBaseFiltersSchema.refine(priceRangeConstraint, {
     message: 'priceMin nu poate fi mai mare decât priceMax',
     path: ['priceMin'],
+});
+exports.searchProductsSchema = zod_1.z.object({
+    q: zod_1.z
+        .string()
+        .min(1, 'Căutarea trebuie să conțină cel puțin un caracter')
+        .transform((val) => val.trim()),
+    page: zod_1.z.coerce.number().int().positive().default(1),
+    limit: zod_1.z.coerce.number().int().positive().max(100).default(12),
 });
 //# sourceMappingURL=dto.js.map

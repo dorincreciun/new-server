@@ -26,6 +26,25 @@ export class BrowseController {
         }
     }
 
+    async searchProducts(
+        req: Request,
+        res: Response,
+        next: NextFunction
+    ) {
+        try {
+            const {products, pagination} = await browseService.searchProducts(req.query as any);
+            return sendSuccess<ProductResponse[], any>(
+                res,
+                products,
+                'Products found by search',
+                200,
+                { pagination }
+            );
+        } catch (error) {
+            next(error);
+        }
+    }
+
     async getFilters(
         req: Request,
         res: Response,

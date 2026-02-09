@@ -1,11 +1,14 @@
 import { Router } from 'express';
 import { browseController } from './controller';
 import { validate } from '../../shared/middleware/validate';
-import { browseProductsSchema } from './dto';
+import { browseProductsSchema, searchProductsSchema } from './dto';
 
 const router = Router();
 
-// Endpoint unic: listează produsele + filtrele aferente (flags, ingredients, doughTypes, sizeOptions, price)
+// Endpoint pentru filtrare produse
 router.get('/products', validate({ query: browseProductsSchema }), browseController.getProducts);
+
+// Endpoint separat pentru căutare
+router.get('/search', validate({ query: searchProductsSchema }), browseController.searchProducts);
 
 export default router;
